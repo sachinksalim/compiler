@@ -9,6 +9,7 @@ t_Times   = r'\*'
 t_Divide  = r'/'
 t_OpenParen  = r'\('
 t_CloseParen  = r'\)'
+t_assignment = r'='
 
 def t_IntConst(t):
     r'\d+'
