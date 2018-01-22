@@ -1,6 +1,6 @@
 from lex import *
 
-data = "2+6*85+1"
+data = "2+6*85+1="
 
 # Give the lexer some input
 lexer.input(data)
