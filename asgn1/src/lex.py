@@ -1,7 +1,16 @@
 import ply.lex as lex
-tokens = ['Plus','Minus','Times','Divide','Assign', 
+
+
+keywords = ('break','case','console','continue','delete','do',
+	   'else','eval','for','function','if','in','log','new','return','switch',
+	   'this','typeof','undefined','var','void','while','with')
+
+
+tokens = ('Plus','Minus','Times','Divide','Assign', 
 	'OpenBracket', 'CloseBracket', 'OpenParen','CloseParen','OpenBrace','CloseBrace',
-	'Identifier','Type','Return','IntConst','SemiColon']
+	'Identifier','Type','IntConst','SemiColon','ID')+keywords
+
+
 
 t_Plus    = r'\+'
 t_Minus   = r'-'
@@ -14,7 +23,15 @@ t_OpenParen  = r'\('
 t_CloseParen  = r'\)'
 t_OpenBrace = r'\{'
 t_CloseBrace = r'\}'
+t_Identifier = r'[a-zA-Z_][a-zA-Z_0-9]*'
 t_SemiColon = r';'
+
+def t_ID(t):                         
+    r'[a-zA-Z_][a-zA-Z_]*'
+    if t.value in keywords :
+	t.type = t.value
+    return t
+
 
 def t_IntConst(t):
     r'\d+'
