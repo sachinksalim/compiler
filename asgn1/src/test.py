@@ -1,6 +1,6 @@
 from lex import *
 
-data = "2+6*85+1="
+data = "return ell in if {2+(6*85)+1}=[10*2];"
 
 # Give the lexer some input
 lexer.input(data)
