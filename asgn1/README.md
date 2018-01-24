@@ -1,4 +1,5 @@
-# Compiler Assignment 1 (Lexer for Javascript using PLY)
+# Compiler Assignment 1
+## Lexer for Javascript using PLY
 
 One Paragraph of project description goes here
 
