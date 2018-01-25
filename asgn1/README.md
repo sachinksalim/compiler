@@ -1,7 +1,7 @@
 # Compiler Assignment 1
 ## Lexer for Javascript using PLY
 
-One Paragraph of project description goes here
+A lexer for Javascript using the parsing tool PLY (Python Lex-Yacc). It outputs a summary of the tokens in the program.
 
 
 ### How to run
