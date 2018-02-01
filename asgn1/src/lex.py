@@ -2,9 +2,7 @@ import ply.lex as lex
 
 keywords = ('break','case','console','continue','delete','do', 'else','eval','for','function','if','in','log','new','return','switch', 'this','typeof','undefined','var','void','while','with')
 
-tokens = ('Dot', 'Comma', 'SemiColon', 'Colon', 'Plus', 'Minus', 'Times', 'Expo', 'Divide', 'Mod', 'BinAnd', 'BinOr', 'BinXor', 'BinNot', 'CondOp', 'Not', 'LeftParen', 'RightParen', 'LeftBrace', 'RightBrace', 'LeftBracket', 'RightBracket', 'Assign', 'Equal', 'NotEqual', 'StrEqual', 'StrNotEqual', 'LT', 'GT', 'LTE', 'GTE', 'Or', 'And', 'Incr', 'Decr', 'Lshift', 'Rshift', 'Urshift', 'PlusEq', 'MinusEq', 'IntoEq', 'DivEq', 'LshiftEq', 'RshiftEq', 'UrshiftEq', 'AndEq', 'ModEq', 'XorEq', 'OrEq',
-
-    'Identifier', 'Number', 'String') + keywords
+tokens = ('Dot', 'Comma', 'SemiColon', 'Colon', 'Plus', 'Minus', 'Times', 'Expo', 'Divide', 'Mod', 'BinAnd', 'BinOr', 'BinXor', 'BinNot', 'CondOp', 'Not', 'LeftParen', 'RightParen', 'LeftBrace', 'RightBrace', 'LeftBracket', 'RightBracket', 'Assign', 'Equal', 'NotEqual', 'StrEqual', 'StrNotEqual', 'LT', 'GT', 'LTE', 'GTE', 'Or', 'And', 'Incr', 'Decr', 'Lshift', 'Rshift', 'Urshift', 'PlusEq', 'MinusEq', 'IntoEq', 'DivEq', 'LshiftEq', 'RshiftEq', 'UrshiftEq', 'AndEq', 'ModEq', 'XorEq', 'OrEq','Identifier', 'Number', 'String') + keywords
 
 # define operators
 t_Dot           = r'\.'
@@ -87,41 +85,44 @@ def t_NewLine(t):
 
 string = r"""
 (?:
-    # single quoted string
-    (?:'                               # opening single quote
-        (?: [^'\\\n\r]                 # no \, line terminators or '
-            | \\[a-zA-Z!-\/:-@\[-`{-~] # or escaped characters
-            | \\x[0-9a-fA-F]{2}        # or hex_escape_sequence
-            | \\u[0-9a-fA-F]{4}        # or unicode_escape_sequence
-        )*?                            # zero or many times
-        (?: \\\n                       # multiline ?
-          (?:
-            [^'\\\n\r]                 # no \, line terminators or '
-            | \\[a-zA-Z!-\/:-@\[-`{-~] # or escaped characters
-            | \\x[0-9a-fA-F]{2}        # or hex_escape_sequence
-            | \\u[0-9a-fA-F]{4}        # or unicode_escape_sequence
-          )*?                          # zero or many times
-        )*
-    ')                                 # closing single quote
-    |
+    
     # double quoted string
-    (?:"                               # opening double quote
-        (?: [^"\\\n\r]                 # no \, line terminators or "
-            | \\[a-zA-Z!-\/:-@\[-`{-~] # or escaped characters
-            | \\x[0-9a-fA-F]{2}        # or hex_escape_sequence
-            | \\u[0-9a-fA-F]{4}        # or unicode_escape_sequence
+    (?:"                               
+        (?: [^"\\\n\r]                 # cannot be \, line terminators or "
+            | \\x[a-fA-F0-9]{2}        # hex_escape_sequence
+            | \\u[a-fA-F0-9]{4}        # unicode_escape_sequence
+            | \\[a-zA-Z!-\/:-@\[-`{-~] # escaped characters
         )*?                            # zero or many times
         (?: \\\n                       # multiline ?
           (?:
-            [^"\\\n\r]                 # no \, line terminators or "
-            | \\[a-zA-Z!-\/:-@\[-`{-~] # or escaped characters
-            | \\x[0-9a-fA-F]{2}        # or hex_escape_sequence
-            | \\u[0-9a-fA-F]{4}        # or unicode_escape_sequence
+            [^"\\\n\r]                 # cannot be \, line terminators or "
+            | \\x[a-fA-F0-9]{2}        # hex_escape_sequence
+            | \\u[a-fA-F0-9]{4}        # unicode_escape_sequence
+            | \\[a-zA-Z!-\/:-@\[-`{-~] # escaped characters
           )*?                          # zero or many times
         )*
-    ")                                 # closing double quote    
+    ")  
+       |
+    # single quoted string
+    (?:'                               
+        (?: [^'\\\n\r]                 # cannot be \, line terminators or '
+            | \\x[a-fA-F0-9]{2}        # hex_escape_sequence
+            | \\u[a-fA-F0-9]{4}        # unicode_escape_sequence
+            | \\[a-zA-Z!-\/:-@\[-`{-~] # escaped characters
+        )*?                            # zero or many times
+        (?: \\\n                       # multiline ?
+          (?:
+            [^'\\\n\r]                 # cannot be \, line terminators or '
+            | \\x[a-fA-F0-9]{2}        # hex_escape_sequence
+            | \\u[a-fA-F0-9]{4}        # unicode_escape_sequence
+            | \\[a-zA-Z!-\/:-@\[-`{-~] # escaped characters
+          )*?                          # zero or many times
+        )*
+    ')                                 
+    
+                                       
 )
-"""  # "
+"""  
 
 @lex.TOKEN(string)
 def t_String(t):
