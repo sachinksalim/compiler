@@ -1,7 +1,10 @@
+#!/usr/bin/python
 from collections import Counter
 from lex import *
+import sys
 
-js_code = open("test.js")
+js_file_name = sys.argv[1]
+js_code = open(js_file_name, "r" )
 data = js_code.read()
 js_code.close()
 
