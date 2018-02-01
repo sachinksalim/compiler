@@ -23,7 +23,7 @@ bin/lexer test/test1.js
 
                          ##   Assignment 1 -- Lexer  ##
 										 
-Inside the "asgn1" directory we have two folders named "src" and "tests". 
+Inside the "asgn1" directory we have two folders named "src" and "test". 
 
 The sample test files ( javascript files ) are inside the "test" directory.  
 ( test1.js  test2.js  test3.js  test4.js  test5.js)
