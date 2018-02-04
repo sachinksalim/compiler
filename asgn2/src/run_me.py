@@ -5,6 +5,13 @@
 #
 # some definitions
 
+# Operators
+arith_ops = ['+', '-', '*', '/', '%']
+rel_ops = ['<', '<=', '>', '>=', '==', '!=']
+logic_ops = ['!', '&&', '||']
+
+keywords = ['ifgoto', 'goto', 'return', 'call', 'print', 'label', '=', 'function', 'exit']
+
 def main():
     fp = open("test.txt")
     tac = fp.read() # three-address code
@@ -33,7 +40,7 @@ def main():
             block_leaders.add(int(line[0]))   
         elif line[1] == 'ret':
             block_leaders.add(int(line[0]))
-    sorted(block_leaders)
+    block_leaders = list(sorted(block_leaders))
     print(block_leaders)
     fp.close()
 
