@@ -1,10 +1,6 @@
-1, =, c, -2
-2, =, b, 7
-3, =, a, b
-4, +, a, c
-5, ifgoto, leq, a, 50, 1
-6, call, foo
-7, ret
-8, label, foo
-9, print, a
-10, ret
+=, c, -2
+=, b, 7
+=, a, b
++, a, c
+call, foo
+=, d, 0
