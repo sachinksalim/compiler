@@ -5,7 +5,7 @@ reg_desc = {}
 
 # Tuple of all the registers in X86
 # reg_list = ('eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'esp')
-reg_list = ('eax', 'ebx')
+reg_list = ('eax', 'ebx', 'ecx')
 var_set = set() # Set of all variables
 
 for reg in reg_list:
@@ -41,13 +41,14 @@ def get_reg(var, symbol_table):
 
 
     farthest_use = find_farthest_use(symbol_table)
-    print('\n\n\n\n\n..............')
+    # print ('FARTHEST USE', farthest_use)
     reg = farthest_use['reg']
 
     print ("\tmovl %" + str(reg) + ", " + str(farthest_use['var']))
-    
+    addr_desc[farthest_use['var']]['loc'] = 'mem'
+    addr_desc[farthest_use['var']]['reg_val'] = None
     addr_desc[var]['loc'] = 'reg'
     addr_desc[var]['reg_val'] = reg
     reg_desc[reg]['state'] = 'loaded'
-    reg_desc[reg]['var'] = var
+    reg_desc[reg]['content'] = var
     return (False, reg)
