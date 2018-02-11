@@ -3,7 +3,7 @@
 from tables import *
 import copy
 
-DEBUG = True
+DEBUG = False
 
 # Operators
 arith_ops = ['+', '-', '*', '/', '%']
@@ -62,7 +62,7 @@ def content(block):
                 except:
                     block_var_list_by_line[-1].append(word)
                     block_var_set.add(word)
-    # print("List:", block_var_list_by_line)       
+    #print("List:", block_var_list_by_line)       
     return (block_var_set, block_var_list_by_line)
 
 def print_asm(line, symbol_table, line_var_list):
@@ -73,6 +73,7 @@ def print_asm(line, symbol_table, line_var_list):
         (in_reg, reg) = get_reg(var, symbol_table)
         if len(line_var_list) > 1:
             if not in_reg:
+                #print ("heyyyyyy")
                 print ("\tmovl "+var+", %"+reg)
         line_var_list[var_idx] = '%'+reg
 
@@ -87,9 +88,39 @@ def print_asm(line, symbol_table, line_var_list):
         print ("\tmovl "+t+", "+ line_var_list[0])
 
     elif op=='+':
-         print ("\taddl "+line_var_list[1]+", "+line_var_list[0]) # need to be updated
+        print ("\taddl "+line_var_list[1]+", "+line_var_list[0]) # need to be updated
+    elif op=='-':
+        print ("\tsubl "+line_var_list[1]+", "+line_var_list[0])
+    elif op=='*':
+        print ("\timul "+line_var_list[1]+", "+line_var_list[0])
+    #elif op=='goto':
+    #    free_reg()
+    #    print ("\tjmp "+ line[2])
+    elif op == 'label':
+        print ( line[2]+":")
+        free_reg()
+    elif op == '&&':
+    # 'and' operator    
+        print ("\tandl "+line_var_list[1]+", "+line_var_list[0])
+    elif op == '||':
+    # 'or' operator    
+        print ("\torl "+line_var_list[1]+", "+line_var_list[0])
+    elif op == 'ret':
+        print ("\tret")
+    elif op == 'ifgoto':
+        print ("\tcmp "+line_var_list[0]+", "+line_var_list[1])
+        if line[2] == 'lt':
+            free_reg()
+            print ("\tjl "+line[5])
 
-def process(block):
+
+
+
+
+
+
+
+def process(block):              # gets called for every basic block
     (block_var_set, block_var_list_by_line) = content(block)
     
     for var in block_var_set:
