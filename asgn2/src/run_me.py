@@ -130,9 +130,31 @@ def print_asm(line, symbol_table, line_var_list):
         elif line[2] == 'neq':
             free_reg()
             print ("\tjne "+line[5])
-    elif op == 'call':
+    ''' elif op == 'call':
         free_reg()
-        print ("")
+        print ("\tcall "+line[2])
+        if len(line_var_list)!=0:
+            print ("movl %eax, "+line_var_list[0])
+    '''
+'''    elif op == '/' or op == '%':
+        
+            things that need to be done:
+            mov edx, 0
+            mov eax, dividend
+            mov any_reg, divisor
+            div any_reg
+            
+            the remainder gets stored in edx
+            and quotient in eax
+        
+        free_reg() # since we need empty eax and edx
+        print ("\tmovl $0, $edx")
+        # now we need to move dividend that is line_var_list[0] to $eax
+        if addr_desc[line_var_list[0]]['location'] == 'memory'
+            print 
+'''
+
+
 
 def process(block):              # gets called for every basic block
     (block_var_set, block_var_list_by_line) = content(block)
