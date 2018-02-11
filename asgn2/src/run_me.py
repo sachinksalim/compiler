@@ -1,9 +1,8 @@
 #!/usr/bin/python
 
 from tables import *
+import copy
 
-#
-# some definitions
 DEBUG = True
 
 # Operators
@@ -100,7 +99,7 @@ def process(block):
     symbol_table_list = []
     symbol_table = {}
     for var in block_var_set:
-        symbol_table[var] = {'state': 'dead', 'prev_use': None, 'next_use': None}
+        symbol_table[var] = {'state': 'dead', 'next_use': None}
 
     if not symbol_table: # if symbol table is empty
         for line in block:
@@ -114,47 +113,39 @@ def process(block):
             if not block_var_list_by_line[idx]: # if no variable in the current line
                 symbol_table_list.insert(0, {})
                 continue
-            print('....', block_var_list_by_line[idx])
             dest = block_var_list_by_line[idx][0]
-            if dest[0] == '$':
-                symbol_table[dest]['state'] = 'dead'
+            # if dest[0] == '$':
+            symbol_table[dest]['state'] = 'dead'
             for i in range(1, len(block_var_list_by_line[idx])):
                 src = block_var_list_by_line[idx][i]
-                if src[0] == '$':
-                    if symbol_table[src]['state'] == 'dead':
-                        symbol_table[src]['state'] = 'live'
-                        symbol_table[src]['prev_use'] = idx
-                    symbol_table[src]['next_use'] = idx
-            symbol_table_list.insert(0, symbol_table)
+                # if src[0] == '$':
+                # if symbol_table[src]['state'] == 'dead':
+                symbol_table[src]['state'] = 'live'
+                # symbol_table[src]['prev_use'] = idx
+                symbol_table[src]['next_use'] = idx
+            symbol_table_list.insert(0, copy.deepcopy(symbol_table)) # inserts a copy of symbol table to the list
 
-    # print('\n\n')
-    # print('Block')
-    # for i in block:
-    #     print('\n',i)
-    # print('\nSymbol')
-    # for i in symbol_table_list:
-    #     print(i)
-    # print('\nVar List')
-    # for i in block_var_list_by_line:
-    #     print(i)
-    # print('\n\n')
-    debug_print('\n__________________')
-    print('\nCURRENT BLOCK')
-    print(block)
+    debug_print('\n____________________________________', 1) 
     for i in range(len(block)):
+        debug_print('\t.............', 1)
         print_asm(block[i], symbol_table_list[i], block_var_list_by_line[i])
-    debug_print('\nSYMBOL TABLE')
-    debug_print(symbol_table)
-    debug_print('\nADDRESS DESCRIPTOR')
-    debug_print(addr_desc)
-    debug_print('\nREGISTER DESCRIPTOR')
+
+    debug_print('\nCURRENT BLOCK', 1)
+    debug_print(block, 1)
+    debug_print('\nSYMBOL TABLE LIST', 1)
+    for symbol_table in symbol_table_list:
+        debug_print(symbol_table, 1)
+    debug_print('\nADDRESS DESCRIPTOR', 1)
+    debug_print(addr_desc, 1)
+    debug_print('\nREGISTER DESCRIPTOR', 1)
     for desc in reg_desc:
         if reg_desc[desc]['content']:
-            debug_print((desc, reg_desc[desc]))
+            debug_print((desc, reg_desc[desc]), 1)
 
-def debug_print(s):
+def debug_print(s, level = 0):
     if DEBUG:
-        print(s)
+        if level > 0:
+            print(s)
 
 if __name__ == '__main__':
     with open("test.txt") as fp:
@@ -164,7 +155,8 @@ if __name__ == '__main__':
     for line in inst_list:
         debug_print(line)
     for i in range(len(inst_list)):
-        inst_list[i] = inst_list[i].split(", ")    
+        inst_list[i] = inst_list[i].split(", ")
+        inst_list[i].insert(0, str(i+1)) # add line number
     
     basic_blocks = form_blocks(inst_list)
 
