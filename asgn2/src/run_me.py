@@ -99,6 +99,9 @@ def print_asm(line, symbol_table, line_var_list):
     elif op == 'label':
         print ( line[2]+":")
         free_reg()
+    elif op == '!':
+    # logical not operation
+        print ("\tnotl "+line_var_list[0])
     elif op == '&&':
     # 'and' operator    
         print ("\tandl "+line_var_list[1]+", "+line_var_list[0])
@@ -112,13 +115,24 @@ def print_asm(line, symbol_table, line_var_list):
         if line[2] == 'lt':
             free_reg()
             print ("\tjl "+line[5])
-
-
-
-
-
-
-
+        elif line[2] == 'leq':
+            free_reg()
+            print ("\tjleq "+line[5])
+        elif line[2] == 'gt':
+            free_reg()
+            print ("\tjg "+line[5])
+        elif line[2] == 'geq':
+            free_reg()
+            print ("\tjge "+line[5])
+        elif line[2] == 'eq':
+            free_reg()
+            print ("\tje "+line[5])
+        elif line[2] == 'neq':
+            free_reg()
+            print ("\tjne "+line[5])
+    elif op == 'call':
+        free_reg()
+        print ("")
 
 def process(block):              # gets called for every basic block
     (block_var_set, block_var_list_by_line) = content(block)
