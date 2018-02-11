@@ -41,7 +41,7 @@ def get_reg(var, symbol_table):
 
 
     farthest_use = find_farthest_use(symbol_table)
-    # print ('FARTHEST USE', farthest_use)
+    #print ('FARTHEST USE', farthest_use)
     reg = farthest_use['reg']
 
     print ("\tmovl %" + str(reg) + ", " + str(farthest_use['var']))
@@ -52,3 +52,12 @@ def get_reg(var, symbol_table):
     reg_desc[reg]['state'] = 'loaded'
     reg_desc[reg]['content'] = var
     return (False, reg)
+
+def free_reg():
+    for reg in reg_list:
+        if reg_desc[reg]['state'] == 'loaded':
+            var = reg_desc[reg]['content']
+            print ("\nfreeing the registers ")
+            print ("\tmovl %" +str(reg) +", " + str(var))
+            addr_desc[var]['loc'] = 'memory'
+            reg_desc[reg]['state'] = 'empty'
