@@ -1,6 +1,12 @@
-=, c, -2
-=, b, 5
-=, a, c
+=, a, 2
+label, loop
+=, b, 7
++, a, b
+=, d, 50
+ifgoto, leq, a, d, loop
+call, foo
+exit
+label, foo
+/, a, b
 print, a
-print, b
-print, c
+ret
