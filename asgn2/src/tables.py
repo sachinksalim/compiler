@@ -4,8 +4,7 @@
 reg_desc = {}
 
 # Tuple of all the registers in X86
-# reg_list = ('eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'esp')
-reg_list = ('eax', 'ebx', 'ecx', 'edx')
+reg_list = ('eax', 'ebx', 'ecx', 'edx', 'esi', 'edi')
 var_set = set() # Set of all variables
 
 for reg in reg_list:
