@@ -1,0 +1,12 @@
+=, b, 2
+=, c, 5
+print, b
+print, c
+=, a, b
+print a
++, a, b
+print a
+-, a, b
+print a
+*, a, c
+print c
