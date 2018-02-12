@@ -2,6 +2,7 @@
 
 from tables import *
 import copy
+import sys
 
 DEBUG = False
 
@@ -282,7 +283,8 @@ def debug_print(s, level = 0):
             print(s)
 
 if __name__ == '__main__':
-    with open("test.txt") as fp:
+    ir_filename = sys.argv[1]
+    with open(ir_filename) as fp:
         inst_list = fp.read().split('\n') # three-address code
 
     debug_print("INSTRUCTIONS")
