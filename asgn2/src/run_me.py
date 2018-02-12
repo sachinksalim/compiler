@@ -129,6 +129,7 @@ def print_asm(line, symbol_table, line_var_list):
             print(line[5])
         else:
             print ('Invaid operator: '+op+'\n')
+            raise SyntaxError
         return
     # ''' elif op == 'call':
     #     free_reg()
@@ -200,6 +201,9 @@ def print_asm(line, symbol_table, line_var_list):
             reg_desc['edx']['content'] = dividend
             addr_desc[dividend]['loc'] = 'reg'
             addr_desc[dividend]['reg_val'] = 'edx'
+    else:
+        print('Unhandled Operator!')
+        raise SyntaxError
 
 
 def process(block):
