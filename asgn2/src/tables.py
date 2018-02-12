@@ -1,11 +1,11 @@
 # Register Descriptor
-# Keep track of what is currently in each register.
+# Stores the variable identifier currently in each register.
 # Initially all the registers are empty
 reg_desc = {}
 
 # Tuple of all the registers in X86
 # reg_list = ('eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp', 'esp')
-reg_list = ('eax', 'ebx', 'ecx')
+reg_list = ('eax', 'ebx', 'ecx', 'edx')
 var_set = set() # Set of all variables
 
 for reg in reg_list:
@@ -41,7 +41,7 @@ def get_reg(var, symbol_table):
 
 
     farthest_use = find_farthest_use(symbol_table)
-    #print ('FARTHEST USE', farthest_use)
+    # print ('FARTHEST USE', farthest_use)
     reg = farthest_use['reg']
 
     print ("\tmovl %" + str(reg) + ", " + str(farthest_use['var']))
@@ -53,11 +53,32 @@ def get_reg(var, symbol_table):
     reg_desc[reg]['content'] = var
     return (False, reg)
 
-def free_reg():
-    for reg in reg_list:
-        if reg_desc[reg]['state'] == 'loaded':
-            var = reg_desc[reg]['content']
-            print ("\nfreeing the registers ")
-            print ("\tmovl %" +str(reg) +", " + str(var))
-            addr_desc[var]['loc'] = 'memory'
-            reg_desc[reg]['state'] = 'empty'
+def movex86(src, dest, flag = 'R2R'):
+    if flag == 'R2R':
+        print ("\tmovl %"+src+', %'+dest)
+        if reg_desc[dest]['state'] == 'loaded':
+            addr_desc[reg_desc[dest]['content']]['reg_val'] = None
+        reg_desc[dest]['state'] = 'loaded'
+        reg_desc[dest]['content'] = reg_desc[src]['content']
+        reg_desc[src]['state'] = 'empty'
+        reg_desc[src]['content'] = None
+        addr_desc[reg_desc[dest]['content']]['reg_val'] = dest
+
+    elif flag == 'R2M':
+        print ("\tmovl %"+src+', '+dest)
+        reg_desc[src]['state'] = 'empty'
+        reg_desc[src]['content'] = None
+        addr_desc[dest]['loc'] = 'mem'
+        addr_desc[dest]['reg_val'] = None
+
+    elif flag == 'M2R':
+        print ("\tmovl "+src+', %'+dest)
+        if reg_desc[dest]['state'] == 'loaded':
+            addr_desc[reg_desc[dest]['content']]['reg_val'] = None
+        reg_desc[dest]['state'] = 'loaded'
+        reg_desc[dest]['content'] = src
+        addr_desc[src]['loc'] = 'reg'
+        addr_desc[src]['reg_val'] = dest
+
+    else:
+        print('Invalid Flag!')
