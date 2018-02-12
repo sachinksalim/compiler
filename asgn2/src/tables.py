@@ -82,13 +82,14 @@ def movex86(src, dest, flag = 'R2R'):
 
     else:
         print('Invalid Flag!')
-        
+
 def free_reg():
     for reg in reg_list:
         if reg_desc[reg]['state'] == 'loaded':
-            temp = reg_desc[reg]['content']
-            # moving the reg content to mem
-            print ("freeing all the registers")
-            print ("\tmovl %"+reg+", "+temp)
-            addr_desc[temp]['loc'] = 'mem'
-            reg_desc[reg]['state'] = 'empty'      
+            movex86(reg, reg_desc[reg]['content'], 'R2M')
+
+print_exit = 'end_label:\n\
+    movl $1, %eax\n\
+    movl $0, %ebx\n\
+    int $0x80\n\
+    '
