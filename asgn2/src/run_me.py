@@ -127,6 +127,8 @@ def print_asm(line, symbol_table, line_var_list):
     #     if len(line_reg_list)!=0:
     #         print ("movl %eax, "+line_reg_list[0])
     # '''
+    elif op == 'call':
+            print ("\tcall "+line[2])
     elif op == 'ret':
         var = line_var_list[0]
         if reg_desc[var]['loc'] != 'reg' or reg_desc[var]['reg_val'] != 'eax':
@@ -136,6 +138,19 @@ def print_asm(line, symbol_table, line_var_list):
             else:
                 movex86(reg_desc[var]['reg_val'], 'eax', 'R2R')
         print ("\tret")
+    elif op == 'print':
+            var = line_var_list[0] # var stores the var whose value is to be printed
+            var_reg = line_reg_list[0] # var_reg : its corresponding register
+            # for print we would need to do
+            # movl $4, %eax
+            # movl $1, %ebx
+            # and move the contents of the register to be printed to ecx
+            # so lets just free all the registers
+            free_reg()
+            # lets push the value of the variable onto the stack
+            print ('\tpushl '+var)
+            print ('\tcall print_Integer')
+            print ('\tpopl' +var)
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -265,3 +280,12 @@ if __name__ == '__main__':
         #     print ('L' + str(inst_no) + ':', end="")
         process(block)
         inst_no += 1
+    
+    # text of function for print_Integer 
+    text = 'print_Integer:\n\
+            movl 4(%esp), %ecx\n\
+            cmpl $0, %exc\n\
+            jge positive\n\
+            notl %ecx\n\
+            positive:\n\
+            movl %ecx'    
