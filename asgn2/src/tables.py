@@ -87,9 +87,3 @@ def free_reg():
     for reg in reg_list:
         if reg_desc[reg]['state'] == 'loaded':
             movex86(reg, reg_desc[reg]['content'], 'R2M')
-
-print_exit = 'end_label:\n\
-    movl $1, %eax\n\
-    movl $0, %ebx\n\
-    int $0x80\n\
-    '
