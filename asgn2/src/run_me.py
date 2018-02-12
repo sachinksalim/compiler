@@ -2,6 +2,7 @@
 
 from tables import *
 import copy
+import sys
 
 DEBUG = False
 
@@ -113,20 +114,19 @@ def print_asm(line, symbol_table, line_var_list):
         elif op == 'ifgoto':
             print ("\tcmp "+line_reg_list[0]+", "+line_reg_list[1])
             if line[2] == 'lt':
-                print ("\tjl ", end = "")
+                print ("\tjl "+line[5])
             elif line[2] == 'leq':
-                print ("\tjle ", end = "")
+                print ("\tjle "+line[5])
             elif line[2] == 'gt':
-                print ("\tjg ", end = "")
+                print ("\tjg "+line[5])
             elif line[2] == 'geq':
-                print ("\tjge ", end = "")
+                print ("\tjge "+line[5])
             elif line[2] == 'eq':
-                print ("\tje ", end = "")
+                print ("\tje "+line[5])
             elif line[2] == 'neq':
-                print ("\tjne ", end = "")
+                print ("\tjne "+line[5])
             else:
                 print ("No other rel operators!\n")
-            print(line[5])
         else:
             print ('Invaid operator: '+op+'\n')
             raise SyntaxError
@@ -265,7 +265,8 @@ def debug_print(s, level = 0):
             print(s)
 
 if __name__ == '__main__':
-    with open("test.ir") as fp:
+    ir_filename = sys.argv[1] 
+    with open(ir_filename) as fp:
         inst_list = fp.read().split('\n') # three-address code
 
     debug_print("INSTRUCTIONS")
