@@ -2,7 +2,6 @@
 
 from tables import *
 import copy
-import sys
 
 DEBUG = False
 
@@ -76,6 +75,7 @@ def print_asm(line, symbol_table, line_var_list):
     bad_ops = ['/', '%', 'ret', 'call', 'print', 'exit']
 
     line_reg_list = []
+    debug_print(line)
     if op not in bad_ops:
         for var in line_var_list:
             (in_reg, reg) = get_reg(var, symbol_table)
@@ -112,24 +112,24 @@ def print_asm(line, symbol_table, line_var_list):
         elif op == '||':    # 'or' operator    
             print ("\torl "+line_reg_list[1]+", "+line_reg_list[0])
         elif op == 'ifgoto':
-            print ("\tcmp "+line_reg_list[0]+", "+line_reg_list[1])
+            print ("\tcmp "+line_reg_list[1]+", "+line_reg_list[0])
             if line[2] == 'lt':
-                print ("\tjl "+line[5])
+                print ("\tjl ", end = "")
             elif line[2] == 'leq':
-                print ("\tjle "+line[5])
+                print ("\tjle ", end = "")
             elif line[2] == 'gt':
-                print ("\tjg "+line[5])
+                print ("\tjg ", end = "")
             elif line[2] == 'geq':
-                print ("\tjge "+line[5])
+                print ("\tjge ", end = "")
             elif line[2] == 'eq':
-                print ("\tje "+line[5])
+                print ("\tje ", end = "")
             elif line[2] == 'neq':
-                print ("\tjne "+line[5])
+                print ("\tjne ", end = "")
             else:
                 print ("No other rel operators!\n")
+            print(line[5])
         else:
             print ('Invaid operator: '+op+'\n')
-            raise SyntaxError
         return
     # ''' elif op == 'call':
     #     free_reg()
@@ -159,11 +159,31 @@ def print_asm(line, symbol_table, line_var_list):
             # movl $1, %ebx
             # and move the contents of the register to be printed to ecx
             # so lets just free all the registers
-            free_reg()
+            temp_print = []
+            for reg in reg_list:
+                if reg_desc[reg]['state'] == 'loaded':
+                    src = reg
+                    dest = reg_desc[reg]['content']
+                    print ("\tmovl %"+src+', '+dest)
+                    temp_print.append((src,dest))
+                    reg_desc[src]['state'] = 'empty'
+                    reg_desc[src]['content'] = None
+                    addr_desc[dest]['loc'] = 'mem'
+                    addr_desc[dest]['reg_val'] = None
             # lets push the value of the variable onto the stack
             print ('\tpushl '+var)
             print ('\tcall __printInt')
             print ('\tpopl ' +var)
+
+            for x in temp_print:
+                src = x[1]
+                dest_reg = x[0]
+                print ("\tmovl "+src+', %'+dest_reg)
+                reg_desc[dest_reg]['state'] = 'loaded'
+                reg_desc[dest_reg]['content'] = src
+                addr_desc[src]['loc'] = 'reg'
+                addr_desc[src]['reg_val'] = dest_reg
+
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -201,9 +221,6 @@ def print_asm(line, symbol_table, line_var_list):
             reg_desc['edx']['content'] = dividend
             addr_desc[dividend]['loc'] = 'reg'
             addr_desc[dividend]['reg_val'] = 'edx'
-    else:
-        print('Unhandled Operator!')
-        raise SyntaxError
 
 
 def process(block):
@@ -265,8 +282,7 @@ def debug_print(s, level = 0):
             print(s)
 
 if __name__ == '__main__':
-    ir_filename = sys.argv[1] 
-    with open(ir_filename) as fp:
+    with open("test.txt") as fp:
         inst_list = fp.read().split('\n') # three-address code
 
     debug_print("INSTRUCTIONS")
