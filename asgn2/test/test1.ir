@@ -1,9 +1,13 @@
 =, a, 2
+print, a
 label, loop
 =, b, 7
+print, b
 +, a, b
-=, d, 50
-ifgoto, leq, a, d, loop
+print, a
+=, c, 50
+print, c
+ifgoto, leq, a, c, loop
 call, foo
 exit
 label, foo
