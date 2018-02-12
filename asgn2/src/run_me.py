@@ -3,7 +3,7 @@
 from tables import *
 import copy
 
-DEBUG = True
+DEBUG = False
 
 # Operators
 arith_ops = ['+', '-', '*', '/', '%']
@@ -12,7 +12,9 @@ logic_ops = ['!', '&&', '||']
 operators = arith_ops + rel_ops + logic_ops + ['=']
 
 non_vars = ['label', 'call']
-keywords = ['ifgoto', 'goto', 'ret', 'print', 'function', 'exit'] + non_vars
+keywords = ['ifgoto', 'goto', 'ret', 'print'] + non_vars
+
+label_ids = set()
 
 lang = operators + keywords
 
@@ -26,10 +28,13 @@ def form_blocks(inst_list):
     block_leaders.add(1)  # since the first line is always a leader
     for line in inst_list:
         if line[1] in ['call', 'ifgoto']:
+            label_ids.add(line[-1])
             block_leaders.add(int(line[0])+1) # next line
-        elif line[1] == ['label', 'function']:
+        elif line[1] == 'label':
             block_leaders.add(int(line[0])) # current line
-        
+            label_ids.add(line[-1])
+    
+    # print(lang)   
     block_leaders = list(sorted(block_leaders))
     debug_print("\nBLOCK LEADERS")
     debug_print(block_leaders)
@@ -63,7 +68,7 @@ def content(block):
 def print_asm(line, symbol_table, line_var_list):
     op = line[1]
     # print ("op: ", op)
-    bad_ops = ['/', '%', 'ret']
+    bad_ops = ['/', '%', 'ret', 'call', 'print', 'exit']
 
     line_reg_list = []
     if op not in bad_ops:
@@ -106,7 +111,7 @@ def print_asm(line, symbol_table, line_var_list):
             if line[2] == 'lt':
                 print ("\tjl ", end = "")
             elif line[2] == 'leq':
-                print ("\tjleq ", end = "")
+                print ("\tjle ", end = "")
             elif line[2] == 'gt':
                 print ("\tjg ", end = "")
             elif line[2] == 'geq':
@@ -119,7 +124,7 @@ def print_asm(line, symbol_table, line_var_list):
                 print ("No other rel operators!\n")
             print(line[5])
         else:
-            print ('Invaid operator!\n')
+            print ('Invaid operator: '+op+'\n')
         return
     # ''' elif op == 'call':
     #     free_reg()
@@ -127,20 +132,23 @@ def print_asm(line, symbol_table, line_var_list):
     #     if len(line_reg_list)!=0:
     #         print ("movl %eax, "+line_reg_list[0])
     # '''
+    elif op == 'exit':
+        print(print_exit)
     elif op == 'call':
-            print ("\tcall "+line[2])
+        print ("\tcall "+line[2])
     elif op == 'ret':
-        var = line_var_list[0]
-        if reg_desc[var]['loc'] != 'reg' or reg_desc[var]['reg_val'] != 'eax':
-            movex86('eax', reg_desc['eax']['content'], 'R2M')
-            if reg_desc[var]['loc'] == 'mem':
-                movex86(var, 'eax', 'M2R')
-            else:
-                movex86(reg_desc[var]['reg_val'], 'eax', 'R2R')
+        if line_var_list:
+            var = line_var_list[0]
+            if reg_desc[var]['loc'] != 'reg' or reg_desc[var]['reg_val'] != 'eax':
+                movex86('eax', reg_desc['eax']['content'], 'R2M')
+                if reg_desc[var]['loc'] == 'mem':
+                    movex86(var, 'eax', 'M2R')
+                else:
+                    movex86(reg_desc[var]['reg_val'], 'eax', 'R2R')
         print ("\tret")
     elif op == 'print':
             var = line_var_list[0] # var stores the var whose value is to be printed
-            var_reg = line_reg_list[0] # var_reg : its corresponding register
+            var_reg = addr_desc[var]['reg_val'] # var_reg : its corresponding register
             # for print we would need to do
             # movl $4, %eax
             # movl $1, %ebx
@@ -150,7 +158,7 @@ def print_asm(line, symbol_table, line_var_list):
             # lets push the value of the variable onto the stack
             print ('\tpushl '+var)
             print ('\tcall print_Integer')
-            print ('\tpopl' +var)
+            print ('\tpopl ' +var)
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -226,9 +234,10 @@ def process(block):
             symbol_table_list.insert(0, copy.deepcopy(symbol_table)) # inserts a copy of symbol table to the list
 
     debug_print('\n____________________________________', 1) 
-    for i in range(len(block)):
-        debug_print('\t.............', 1)
-        print_asm(block[i], symbol_table_list[i], block_var_list_by_line[i])
+    if symbol_table:
+        for i in range(len(block)):
+            debug_print('\t.............', 1)
+            print_asm(block[i], symbol_table_list[i], block_var_list_by_line[i])
 
     debug_print('\nCURRENT BLOCK', 1)
     debug_print(block, 1)
@@ -248,7 +257,7 @@ def debug_print(s, level = 0):
             print(s)
 
 if __name__ == '__main__':
-    with open("test.txt") as fp:
+    with open("test.ir") as fp:
         inst_list = fp.read().split('\n') # three-address code
 
     debug_print("INSTRUCTIONS")
@@ -259,6 +268,8 @@ if __name__ == '__main__':
         inst_list[i].insert(0, str(i+1)) # add line number
     
     basic_blocks = form_blocks(inst_list)
+
+    lang += list(label_ids)
 
     for line in inst_list:
         for word in line:
@@ -281,11 +292,58 @@ if __name__ == '__main__':
         process(block)
         inst_no += 1
     
-    # text of function for print_Integer 
-    text = 'print_Integer:\n\
-            movl 4(%esp), %ecx\n\
-            cmpl $0, %exc\n\
-            jge positive\n\
-            notl %ecx\n\
-            positive:\n\
-            movl %ecx'    
+    print_int = 'print_Integer:\n\
+    movl 4(%esp), %ecx\n\
+    cmpl $0, %ecx\n\
+    jge positive_part\n\
+    notl %ecx\n\
+    inc %ecx\n\
+    movl %ecx, %edi\n\
+    movl $45, %eax\n\
+    pushl   %eax\n\
+    movl $4, %eax\n\
+    movl $1, %ebx\n\
+    movl %esp, %ecx\n\
+    movl $1, %edx\n\
+    int $0x80\n\
+    popl %eax\n\
+    movl %edi, %ecx\n\
+positive_part:\n\
+movl %ecx, %eax\n\
+    movl %esp, %esi\n\
+iter_labl:\n\
+    cdq\n\
+    movl $10, %ebx\n\
+    idivl %ebx\n\
+    pushl %edx\n\
+    cmpl $0, %eax\n\
+    jne iter_labl\n\
+    jmp print_num\n\
+    \n\
+print_num:\n\
+    popl %edx\n\
+    addl $48, %edx\n\
+    pushl %edx\n\
+    movl $4, %eax\n\
+    movl $1, %ebx\n\
+    movl %esp, %ecx\n\
+    movl $1, %edx\n\
+    int $0x80\n\
+    popl %edx\n\
+    cmp %esp, %esi\n\
+    jne print_num\n\
+    movl $4, %eax\n\
+    movl $1, %ebx\n\
+    movl $new, %ecx\n\
+    movl $1, %edx\n\
+    int $0x80\n\
+    ret  \n\
+EndPrintNum:\n'
+
+    print(print_int)
+    print ('.section .data')
+    for word in var_set:
+        print (word+":")
+        print ("\t.long 0")
+    print ('new:')
+    print ('\t.ascii "\\n"')
