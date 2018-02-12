@@ -12,7 +12,7 @@ logic_ops = ['!', '&&', '||']
 operators = arith_ops + rel_ops + logic_ops + ['=']
 
 non_vars = ['label', 'call']
-keywords = ['ifgoto', 'goto', 'ret', 'print'] + non_vars
+keywords = ['ifgoto', 'goto', 'ret', 'print', 'exit'] + non_vars
 
 label_ids = set()
 
@@ -21,6 +21,10 @@ lang = operators + keywords
 # Variables
 basic_blocks = [] # The list of blocks
 
+print_exit = '\nend_label:\n\
+    movl $1, %eax\n\
+    movl $0, %ebx\n\
+    int $0x80'
 
 def form_blocks(inst_list):
     basic_blocks = []
@@ -91,7 +95,7 @@ def print_asm(line, symbol_table, line_var_list):
             print ("\tmovl "+t+", "+ line_reg_list[0])
 
         elif op == 'label':
-            print ( line[2]+":")
+            print ( "\n" + line[2]+":")
         elif op == '!':     # logical not operation
             print ("\tnotl "+line_reg_list[0])
         elif op == '+':
@@ -157,7 +161,7 @@ def print_asm(line, symbol_table, line_var_list):
             free_reg()
             # lets push the value of the variable onto the stack
             print ('\tpushl '+var)
-            print ('\tcall print_Integer')
+            print ('\tcall __printInt')
             print ('\tpopl ' +var)
 
     elif op in ['/', '%']:
@@ -281,8 +285,8 @@ if __name__ == '__main__':
     debug_print("\nALL VARIABLES")
     debug_print(var_set)
 
-    print ('\n\t.section .text')
-    print ('\t.global _start')
+    print ('\t.section .text\n')
+    print ('\t.global _start\n')
     print ('_start:')
 
     inst_no = 1
@@ -292,10 +296,10 @@ if __name__ == '__main__':
         process(block)
         inst_no += 1
     
-    print_int = 'print_Integer:\n\
+    print_int = '\n__printInt:\n\
     movl 4(%esp), %ecx\n\
     cmpl $0, %ecx\n\
-    jge positive_part\n\
+    jge __positive\n\
     notl %ecx\n\
     inc %ecx\n\
     movl %ecx, %edi\n\
@@ -307,20 +311,20 @@ if __name__ == '__main__':
     movl $1, %edx\n\
     int $0x80\n\
     popl %eax\n\
-    movl %edi, %ecx\n\
-positive_part:\n\
-movl %ecx, %eax\n\
-    movl %esp, %esi\n\
-iter_labl:\n\
+    movl %edi, %ecx\n\n\
+__positive:\n\
+    movl %ecx, %eax\n\
+    movl %esp, %esi\n\n\
+__iterate:\n\
     cdq\n\
     movl $10, %ebx\n\
     idivl %ebx\n\
     pushl %edx\n\
     cmpl $0, %eax\n\
-    jne iter_labl\n\
-    jmp print_num\n\
+    jne __iterate\n\
+    jmp __printNum\n\
     \n\
-print_num:\n\
+__printNum:\n\
     popl %edx\n\
     addl $48, %edx\n\
     pushl %edx\n\
@@ -331,19 +335,17 @@ print_num:\n\
     int $0x80\n\
     popl %edx\n\
     cmp %esp, %esi\n\
-    jne print_num\n\
+    jne __printNum\n\
     movl $4, %eax\n\
     movl $1, %ebx\n\
     movl $new, %ecx\n\
     movl $1, %edx\n\
     int $0x80\n\
-    ret  \n\
-EndPrintNum:\n'
+    ret  \n\n'
 
     print(print_int)
-    print ('.section .data')
+    print ('\t.section .data')
     for word in var_set:
-        print (word+":")
-        print ("\t.long 0")
+        print (word+":\t.long 0")
     print ('new:')
     print ('\t.ascii "\\n"')
