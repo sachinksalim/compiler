@@ -3,8 +3,9 @@
 print, b
 print, c
 =, a, b
-print a
+print, a
 /, a, b
 print, a
 %, c, b
 print, c
+exit
