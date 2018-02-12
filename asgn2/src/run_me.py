@@ -63,7 +63,7 @@ def content(block):
 def print_asm(line, symbol_table, line_var_list):
     op = line[1]
     # print ("op: ", op)
-    bad_ops = ['/', '%']
+    bad_ops = ['/', '%', 'ret']
 
     line_reg_list = []
     if op not in bad_ops:
@@ -75,7 +75,7 @@ def print_asm(line, symbol_table, line_var_list):
             line_reg_list.append('%'+reg)
 
 
-        if op=='=':
+        if op == '=':
             t = line[-1]
             try:
                 int(t)
@@ -85,40 +85,39 @@ def print_asm(line, symbol_table, line_var_list):
                 t = '$'+t            
             print ("\tmovl "+t+", "+ line_reg_list[0])
 
-        elif op=='+':
-             print ("\taddl "+line_reg_list[1]+", "+line_reg_list[0])
-        elif op=='-':
-            print ("\tsubl "+line_reg_list[1]+", "+line_reg_list[0])
-        elif op=='*':
-            print ("\timul "+line_reg_list[1]+", "+line_reg_list[0])
-        elif op=='goto':
-            print ("\tjmp "+ line[2])
         elif op == 'label':
             print ( line[2]+":")
         elif op == '!':     # logical not operation
             print ("\tnotl "+line_reg_list[0])
+        elif op == '+':
+             print ("\taddl "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op == '-':
+            print ("\tsubl "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op == '*':
+            print ("\timul "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op == 'goto':
+            print ("\tjmp "+ line[2])
         elif op == '&&':    # 'and' operator    
             print ("\tandl "+line_reg_list[1]+", "+line_reg_list[0])
         elif op == '||':    # 'or' operator    
             print ("\torl "+line_reg_list[1]+", "+line_reg_list[0])
-        elif op == 'ret':
-            print ("\tret")
         elif op == 'ifgoto':
             print ("\tcmp "+line_reg_list[0]+", "+line_reg_list[1])
             if line[2] == 'lt':
-                print ("\tjl "+line[5])
+                print ("\tjl ", end = "")
             elif line[2] == 'leq':
-                print ("\tjleq "+line[5])
+                print ("\tjleq ", end = "")
             elif line[2] == 'gt':
-                print ("\tjg "+line[5])
+                print ("\tjg ", end = "")
             elif line[2] == 'geq':
-                print ("\tjge "+line[5])
+                print ("\tjge ", end = "")
             elif line[2] == 'eq':
-                print ("\tje "+line[5])
+                print ("\tje ", end = "")
             elif line[2] == 'neq':
-                print ("\tjne "+line[5])
+                print ("\tjne ", end = "")
             else:
                 print ("No other rel operators!\n")
+            print(line[5])
         else:
             print ('Invaid operator!\n')
         return
@@ -128,8 +127,17 @@ def print_asm(line, symbol_table, line_var_list):
     #     if len(line_reg_list)!=0:
     #         print ("movl %eax, "+line_reg_list[0])
     # '''
+    elif op == 'ret':
+        var = line_var_list[0]
+        if reg_desc[var]['loc'] != 'reg' or reg_desc[var]['reg_val'] != 'eax':
+            movex86('eax', reg_desc['eax']['content'], 'R2M')
+            if reg_desc[var]['loc'] == 'mem':
+                movex86(var, 'eax', 'M2R')
+            else:
+                movex86(reg_desc[var]['reg_val'], 'eax', 'R2R')
+        print ("\tret")
 
-    if op in ['/', '%']:
+    elif op in ['/', '%']:
         dividend = line_var_list[0]
         divisor = line_var_list[1]
         if addr_desc[dividend]['loc'] == 'mem':
