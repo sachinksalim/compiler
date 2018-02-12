@@ -1,0 +1,12 @@
+=, a, 2
+label, loop
+=, b, 7
++, a, b
+=, d, 50
+ifgoto, leq, a, d, loop
+call, foo
+exit
+label, foo
+/, a, b
+print, a
+ret
