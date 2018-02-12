@@ -3,7 +3,7 @@
 from tables import *
 import copy
 
-DEBUG = False
+DEBUG = True
 
 # Operators
 arith_ops = ['+', '-', '*', '/', '%']
@@ -25,14 +25,9 @@ def form_blocks(inst_list):
     block_leaders = set() # block_leaders stores the line numbers of the block leaders
     block_leaders.add(1)  # since the first line is always a leader
     for line in inst_list:
-        if line[1] == 'call':
+        if line[1] in ['call', 'ifgoto']:
             block_leaders.add(int(line[0])+1) # next line
-        elif line[1] == 'goto':
-            block_leaders.add(int(line[-1])) # target of a jump 
-        elif line[1] == 'ifgoto':
-            block_leaders.add(int(line[-1])) # target of a jump
-            block_leaders.add(int(line[0])+1) # next line
-        elif line[1] == 'label':
+        elif line[1] == ['label', 'function']:
             block_leaders.add(int(line[0])) # current line
         
     block_leaders = list(sorted(block_leaders))
@@ -62,101 +57,117 @@ def content(block):
                 except:
                     block_var_list_by_line[-1].append(word)
                     block_var_set.add(word)
-    #print("List:", block_var_list_by_line)       
+    # print("List:", block_var_list_by_line)       
     return (block_var_set, block_var_list_by_line)
 
 def print_asm(line, symbol_table, line_var_list):
     op = line[1]
     # print ("op: ", op)
-    for var in line_var_list:
-        var_idx = line_var_list.index(var)
-        (in_reg, reg) = get_reg(var, symbol_table)
-        if len(line_var_list) > 1:
-            if not in_reg:
-                #print ("heyyyyyy")
-                print ("\tmovl "+var+", %"+reg)
-        line_var_list[var_idx] = '%'+reg
+    bad_ops = ['/', '%']
 
-    if op=='=':
-        t = line[-1]
-        try:
-            int(t)
-        except:
-            t = line_var_list[-1]
+    line_reg_list = []
+    if op not in bad_ops:
+        for var in line_var_list:
+            (in_reg, reg) = get_reg(var, symbol_table)
+            if len(line_var_list) > 1:
+                if not in_reg:
+                    print ("\tmovl "+var+", %"+reg)
+            line_reg_list.append('%'+reg)
+
+
+        if op=='=':
+            t = line[-1]
+            try:
+                int(t)
+            except:
+                t = line_reg_list[-1]
+            else:
+                t = '$'+t            
+            print ("\tmovl "+t+", "+ line_reg_list[0])
+
+        elif op=='+':
+             print ("\taddl "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op=='-':
+            print ("\tsubl "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op=='*':
+            print ("\timul "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op=='goto':
+            print ("\tjmp "+ line[2])
+        elif op == 'label':
+            print ( line[2]+":")
+        elif op == '!':     # logical not operation
+            print ("\tnotl "+line_reg_list[0])
+        elif op == '&&':    # 'and' operator    
+            print ("\tandl "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op == '||':    # 'or' operator    
+            print ("\torl "+line_reg_list[1]+", "+line_reg_list[0])
+        elif op == 'ret':
+            print ("\tret")
+        elif op == 'ifgoto':
+            print ("\tcmp "+line_reg_list[0]+", "+line_reg_list[1])
+            if line[2] == 'lt':
+                print ("\tjl "+line[5])
+            elif line[2] == 'leq':
+                print ("\tjleq "+line[5])
+            elif line[2] == 'gt':
+                print ("\tjg "+line[5])
+            elif line[2] == 'geq':
+                print ("\tjge "+line[5])
+            elif line[2] == 'eq':
+                print ("\tje "+line[5])
+            elif line[2] == 'neq':
+                print ("\tjne "+line[5])
+            else:
+                print ("No other rel operators!\n")
         else:
-            t = '$'+t            
-        print ("\tmovl "+t+", "+ line_var_list[0])
+            print ('Invaid operator!\n')
+        return
+    # ''' elif op == 'call':
+    #     free_reg()
+    #     print ("\tcall "+line[2])
+    #     if len(line_reg_list)!=0:
+    #         print ("movl %eax, "+line_reg_list[0])
+    # '''
 
-    elif op=='+':
-        print ("\taddl "+line_var_list[1]+", "+line_var_list[0]) # need to be updated
-    elif op=='-':
-        print ("\tsubl "+line_var_list[1]+", "+line_var_list[0])
-    elif op=='*':
-        print ("\timul "+line_var_list[1]+", "+line_var_list[0])
-    #elif op=='goto':
-    #    free_reg()
-    #    print ("\tjmp "+ line[2])
-    elif op == 'label':
-        print ( line[2]+":")
-        free_reg()
-    elif op == '!':
-    # logical not operation
-        print ("\tnotl "+line_var_list[0])
-    elif op == '&&':
-    # 'and' operator    
-        print ("\tandl "+line_var_list[1]+", "+line_var_list[0])
-    elif op == '||':
-    # 'or' operator    
-        print ("\torl "+line_var_list[1]+", "+line_var_list[0])
-    elif op == 'ret':
-        print ("\tret")
-    elif op == 'ifgoto':
-        print ("\tcmp "+line_var_list[0]+", "+line_var_list[1])
-        if line[2] == 'lt':
-            free_reg()
-            print ("\tjl "+line[5])
-        elif line[2] == 'leq':
-            free_reg()
-            print ("\tjleq "+line[5])
-        elif line[2] == 'gt':
-            free_reg()
-            print ("\tjg "+line[5])
-        elif line[2] == 'geq':
-            free_reg()
-            print ("\tjge "+line[5])
-        elif line[2] == 'eq':
-            free_reg()
-            print ("\tje "+line[5])
-        elif line[2] == 'neq':
-            free_reg()
-            print ("\tjne "+line[5])
-    ''' elif op == 'call':
-        free_reg()
-        print ("\tcall "+line[2])
-        if len(line_var_list)!=0:
-            print ("movl %eax, "+line_var_list[0])
-    '''
-'''    elif op == '/' or op == '%':
-        
-            things that need to be done:
-            mov edx, 0
-            mov eax, dividend
-            mov any_reg, divisor
-            div any_reg
-            
-            the remainder gets stored in edx
-            and quotient in eax
-        
-        free_reg() # since we need empty eax and edx
-        print ("\tmovl $0, $edx")
-        # now we need to move dividend that is line_var_list[0] to $eax
-        if addr_desc[line_var_list[0]]['location'] == 'memory'
-            print 
-'''
+    if op in ['/', '%']:
+        dividend = line_var_list[0]
+        divisor = line_var_list[1]
+        if addr_desc[dividend]['loc'] == 'mem':
+            if reg_desc['eax']['state'] != 'empty':
+                movex86('eax', reg_desc['eax']['content'], 'R2M')
+            movex86(dividend, 'eax', 'M2R')
+        else:
+            if addr_desc[dividend]['reg_val'] != 'eax':
+                if reg_desc['eax']['state'] != 'empty':
+                    movex86('eax', reg_desc['eax']['content'], 'R2M')
+                movex86(addr_desc[dividend]['reg_val'], 'eax', 'R2R')
+
+        if reg_desc['edx']['state'] == 'loaded':
+           movex86('edx', reg_desc['edx']['content'], 'R2M')
+        print ("\tmovl $0, %edx")
+        (in_reg, reg) = get_reg(divisor, symbol_table)
+        if not in_reg:
+            print ("\tmovl "+divisor+", %"+reg)
+        line_reg_list.append('%'+reg)
+        print ("\tdivl "+line_reg_list[0])
+
+        if op == '/':
+            reg_desc['edx']['state'] = 'empty'
+            reg_desc['edx']['content'] = None
+            reg_desc['eax']['state'] = 'loaded'
+            reg_desc['eax']['content'] = dividend
+            addr_desc[dividend]['loc'] = 'reg'
+            addr_desc[dividend]['reg_val'] = 'eax'
+        else:
+            reg_desc['eax']['state'] = 'empty'
+            reg_desc['eax']['content'] = None
+            reg_desc['edx']['state'] = 'loaded'
+            reg_desc['edx']['content'] = dividend
+            addr_desc[dividend]['loc'] = 'reg'
+            addr_desc[dividend]['reg_val'] = 'edx'
 
 
-
-def process(block):              # gets called for every basic block
+def process(block):
     (block_var_set, block_var_list_by_line) = content(block)
     
     for var in block_var_set:
@@ -181,14 +192,13 @@ def process(block):              # gets called for every basic block
                 symbol_table_list.insert(0, {})
                 continue
             dest = block_var_list_by_line[idx][0]
-            # if dest[0] == '$':
             symbol_table[dest]['state'] = 'dead'
-            for i in range(1, len(block_var_list_by_line[idx])):
+            start_idx = 0
+            if line[1] == '=':
+                start_idx = 1
+            for i in range(start_idx, len(block_var_list_by_line[idx])):
                 src = block_var_list_by_line[idx][i]
-                # if src[0] == '$':
-                # if symbol_table[src]['state'] == 'dead':
                 symbol_table[src]['state'] = 'live'
-                # symbol_table[src]['prev_use'] = idx
                 symbol_table[src]['next_use'] = idx
             symbol_table_list.insert(0, copy.deepcopy(symbol_table)) # inserts a copy of symbol table to the list
 
