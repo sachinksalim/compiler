@@ -1,0 +1,9 @@
+=, a, 4
+=, b, 5
+ifgoto, eq, a, b, hi
+=, c, 0
+print, c
+label, hi
+=, c, 1
+print, c
+exit
