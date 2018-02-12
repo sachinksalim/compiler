@@ -1,0 +1,7 @@
+The folder asgn2 contains two folders 'test'  and  'src'
+
+The folder 'src' further contains these files:
+1)run_me.py   2)tables.py
+
+*run_me.py imports tables.py. Tables.py contains the ('get_reg', 'movx86', 'free_reg') functions.
+*We need to run run_me.py 
