@@ -1,34 +1,66 @@
-=, a, 2
-print, a
-label, loop
-=, b, 7
-print, b
-+, a, b
-print, a
-=, c, 50
-print, c
-ifgoto, leq, a, c, loop
-call, foo
+=, t, 0
+=, i, 0
+label, loop1
+=, const, 10
+ifgoto, geq, i, const, exitloop1
++, t, i
+=, const, 2
++, t, const
+print, t
+=, const, 1
++, i, const
+goto, loop1
+label, exitloop1
+=, t, 0
+=, i, 15
+label, loop2
+=, const, 5
+ifgoto, lt, i, const, exitloop2
++, t, i
+=, const, 2
++, t, const
+print, t
+=, const, 1
+-, i, const
+goto, loop2
+label, exitloop2
 exit
-label, foo
-/, a, b
-print, a
-ret
 
+## JS code
+var t = 0;
+for (var i = 0; i <10; i++) {
+    text += i+2;
+    console.log(t);
+}
 
+var t = 0, i = 15 ;
+while (i >= 5) {
+    text += i+2;
+    console.log(t);
+    i--;
+}
+##
 
-
-=, b, 1
-=, a, 3
-=, i, 10
-=, c, 1
-call, loop
-print, b
-exit
-label, loop
-+, a, b
-print, b
-+, b, c
-ifgoto, geq, b, i, loop
-print, a
-ret
+##
+2
+5
+9
+14
+20
+27
+35
+44
+54
+65
+17
+33
+48
+62
+75
+87
+98
+108
+117
+125
+132
+##
