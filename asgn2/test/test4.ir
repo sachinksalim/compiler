@@ -8,4 +8,44 @@ print, a
 print, a
 *, a, b
 print, a
+=, a, 12
+=, b, 13
+call, fun, c
+print, c
 exit
+label, fun
++, a, b
+ret, a
+
+##
+Corresponding JS code
+
+var a = 4;
+var b = 5;
+console.log(a);
+console.log(b);
+a = a+b;
+console.log(a);
+a = a-b;
+console.log(a);
+a = a*b;
+console.log(a);
+a = 12;
+b = 13;
+var c = fun(a,5);
+console.log(c);
+
+function fun(a, b){
+        console.log(a+b);
+        return a;
+}
+##
+
+##output
+4
+5
+9
+4
+20
+25
+##
