@@ -43,7 +43,7 @@ __printNum:
     jne __printNum
     movl $4, %eax
     movl $1, %ebx
-    movl $new, %ecx
+    movl $newline, %ecx
     movl $1, %edx
     int $0x80
     ret
