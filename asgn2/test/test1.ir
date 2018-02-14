@@ -1,41 +1,81 @@
-=, a, 30
-=, b, 8
-=, c, 50
-print, c
+=, a, 10
+=, temp, 5 
++, a, temp
+print, a
+=, temp, 5
++, a, temp
+print, a
+=, temp, 1
++, a, temp
+print, a
+=, temp, 12
+-, a, temp
+print, a
+=, temp, 2
+-, a, temp
+print, a
+=, temp, 3
+*, a, temp
+print, a
+=, temp, 2
+/, a, temp
+print, a
+=, temp, 4
+%, a, temp
+print, a
+=, x, 5
+=, y, 6
+=, z, x
++, z, y
+print, x
+print, y
+print, z
+=, b, x
++, b, y
++, b, z
 print, b
-print, a
-label, loop
-ifgoto, geq, a, c, exitloop
-+, a, b
-print, a
-goto, loop
-label, exitloop
-call, foo
 exit
-function, foo
-/, a, b
-print, a
-ret
 
 ##
 Corresponding JS code
 
-a = 30;
-b = 8;
-c = 50;
-console.log(c);
-console.log(b);
+var a = 10;
+a += 5;
 console.log(a);
+a = a+5;
+console.log(a);
+a++;
+console.log(a);
+a = a-12;
+console.log(a);
+a -= 2;
+console.log(a);
+a = a*3;
+console.log(a);
+a = a/2;
+console.log(a);
+a = a%2;
+console.log(a);
+var x = 5;
+var y = 6;
+var z = x + y;
+console.log(x);
+console.log(y);
+console.log(z);
+console.log(x+y+z);
+##
 
-while (a <= c) {
-    a += b;
-    console.log(a);
-}
-
-foo();
-
-function foo() {
-    a /= b;
-    console.log(a);
-}
+## output
+15
+20
+21
+9
+7
+21
+10
+2
+5
+6
+11
+22
 ##
