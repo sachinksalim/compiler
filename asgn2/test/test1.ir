@@ -1,16 +1,40 @@
-=, a, 2
-print, a
-label, loop
-=, b, 7
-print, b
-+, a, b
-print, a
+=, a, 30
+=, b, 8
 =, c, 50
 print, c
-ifgoto, leq, a, c, loop
+print, b
+print, a
+label, loop
+ifgoto, geq, a, c, exitloop
++, a, b
+print, a
+goto, loop
+label, exitloop
 call, foo
 exit
-label, foo
+function, foo
 /, a, b
 print, a
 ret
+
+##
+Corresponding python code
+
+a = 30
+b = 8
+c = 50
+print(c)
+print(b)
+print(a)
+
+while a <= c:
+    a += b
+    print(a)
+
+foo()
+
+def foo():
+    a /= b
+    print(a)
+
+##
