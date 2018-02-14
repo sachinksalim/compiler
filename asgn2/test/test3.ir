@@ -1,9 +1,43 @@
 =, a, 4
 =, b, 5
-ifgoto, eq, a, b, hi
+print, a
+print, b
+ifgoto, lt, a, b, L1
+ifgoto, eq, a, b, L3
+=, c, -1
+print, c
+goto, L2
+label, L3
 =, c, 0
 print, c
-label, hi
+goto, L2
+label, L1
 =, c, 1
 print, c
+label, L2
 exit
+
+##Corresponding JS code
+
+var a= 4;
+var b= 5;
+var c;
+if(a<b) {
+	c = -1;
+	console.log(c);
+}
+else if( a==b) {
+	c = 0;
+	console.log(c);
+}
+else {
+	c = 1;
+	console.log(c);
+}
+##
+
+##output
+4
+5
+1
+##
