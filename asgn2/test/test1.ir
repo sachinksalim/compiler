@@ -18,23 +18,24 @@ print, a
 ret
 
 ##
-Corresponding python code
+Corresponding JS code
 
-a = 30
-b = 8
-c = 50
-print(c)
-print(b)
-print(a)
+a = 30;
+b = 8;
+c = 50;
+console.log(c);
+console.log(b);
+console.log(a);
 
-while a <= c:
-    a += b
-    print(a)
+while (a <= c) {
+    a += b;
+    console.log(a);
+}
 
-foo()
+foo();
 
-def foo():
-    a /= b
-    print(a)
-
+function foo() {
+    a /= b;
+    console.log(a);
+}
 ##
