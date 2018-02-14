@@ -81,8 +81,3 @@ def movex86(src, dest, flag = 'R2R'):
 
     else:
         print('Invalid Flag!')
-
-def free_reg():
-    for reg in reg_list:
-        if reg_desc[reg]['state'] == 'loaded':
-            movex86(reg, reg_desc[reg]['content'], 'R2M')
