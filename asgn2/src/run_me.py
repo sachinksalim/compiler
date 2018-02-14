@@ -12,7 +12,7 @@ rel_ops = ['lt', 'leq', 'gt', 'geq', 'eq', 'neq']
 logic_ops = ['!', '&&', '||']
 operators = arith_ops + rel_ops + logic_ops + ['=']
 
-non_vars = ['label', 'call']
+non_vars = ['label', 'call', 'function']
 keywords = ['ifgoto', 'goto', 'ret', 'print', 'exit'] + non_vars
 
 label_ids = set()
@@ -33,9 +33,8 @@ def form_blocks(inst_list):
     block_leaders.add(1)  # since the first line is always a leader
     for line in inst_list:
         if line[1] in ['call', 'ifgoto']:
-            label_ids.add(line[-1])
             block_leaders.add(int(line[0])+1) # next line
-        elif line[1] == 'label':
+        elif line[1] in ['label', 'function']:
             block_leaders.add(int(line[0])) # current line
             label_ids.add(line[-1])
     
@@ -96,7 +95,7 @@ def print_asm(line, symbol_table, line_var_list):
                 t = '$'+t            
             print ("\tmovl "+t+", "+ line_reg_list[0])
 
-        elif op == 'label':
+        elif op in ['label', 'function']:
             print ( "\n" + line[2]+":")
         elif op == '!':     # logical not operation
             print ("\tnotl "+line_reg_list[0])
@@ -128,16 +127,13 @@ def print_asm(line, symbol_table, line_var_list):
                 print ("\tjne ", end = "")
             else:
                 print ("No other rel operators!\n")
+                raise SyntaxError
             print(line[5])
         else:
             print ('Invaid operator: '+op+'\n')
+            raise SyntaxError
         return
-    # ''' elif op == 'call':
-    #     free_reg()
-    #     print ("\tcall "+line[2])
-    #     if len(line_reg_list)!=0:
-    #         print ("movl %eax, "+line_reg_list[0])
-    # '''
+
     elif op == 'exit':
         print(print_exit)
     elif op == 'call':
@@ -222,6 +218,9 @@ def print_asm(line, symbol_table, line_var_list):
             reg_desc['edx']['content'] = dividend
             addr_desc[dividend]['loc'] = 'reg'
             addr_desc[dividend]['reg_val'] = 'edx'
+    else:
+        print('Unhandled Operator!')
+        raise SyntaxError
 
 
 def process(block):
@@ -279,21 +278,34 @@ def process(block):
 
 def debug_print(s, level = 0):
     if DEBUG:
-        if level > 0:
+        if level > 1:
             print(s)
 
-if __name__ == '__main__':
-    ir_filename = sys.argv[1]
+def processIR(ir_filename):
     with open(ir_filename) as fp:
         inst_list = fp.read().split('\n') # three-address code
 
-    debug_print("INSTRUCTIONS")
-    for line in inst_list:
-        debug_print(line)
-    for i in range(len(inst_list)):
-        inst_list[i] = inst_list[i].split(", ")
-        inst_list[i].insert(0, str(i+1)) # add line number
+    debug_print("INSTRUCTIONS",2)
     
+    i = 0
+    commenting = False
+    for line in inst_list:
+        if len(line) > 1 and line[0:2] == '##':
+            commenting = not commenting # Toggle commenting
+        if not commenting:
+            if not line or line.isspace() or line[0] == '#':
+                continue
+            inst_list[i] = line.split(", ")
+            inst_list[i].insert(0, str(i+1)) # add line number
+            i += 1
+    inst_list = inst_list[:i]
+    for line in inst_list:
+        debug_print(line,2)
+    return inst_list
+
+if __name__ == '__main__':
+    ir_filename = sys.argv[1]
+    inst_list = processIR(ir_filename)    
     basic_blocks = form_blocks(inst_list)
 
     lang += list(label_ids)
@@ -314,8 +326,6 @@ if __name__ == '__main__':
 
     inst_no = 1
     for block in basic_blocks:
-        # if block[0][1] != 'label':
-        #     print ('L' + str(inst_no) + ':', end="")
         process(block)
         inst_no += 1
     
