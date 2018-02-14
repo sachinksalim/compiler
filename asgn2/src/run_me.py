@@ -166,14 +166,16 @@ def print_asm(line, symbol_table, line_var_list):
             # addr_desc[var]['reg_val'] = 'eax'
             # reg_desc['eax']['state'] = 'loaded'
             # reg_desc['eax']['content'] = var
+        else:
+            print ("\tcall "+line[2])
 
     elif op == 'ret':
         if line_var_list:
             var = line_var_list[0]
-            if addr_desc[var]['loc'] == 'reg' and addr_desc[var]['reg_val'] != 'eax':
+            if addr_desc[var]['loc'] == 'reg':
                 movex86(addr_desc[var]['reg_val'], var, 'R2M')
-            if addr_desc[var]['loc'] != 'reg' or addr_desc[var]['reg_val'] != 'eax':
-                movex86('eax', reg_desc['eax']['content'], 'R2M')
+            # if addr_desc[var]['loc'] != 'reg' or addr_desc[var]['reg_val'] != 'eax':
+            #     movex86('eax', reg_desc['eax']['content'], 'R2M')
                 if addr_desc[var]['loc'] == 'mem':
                     movex86(var, 'eax', 'M2R')
                 else:
