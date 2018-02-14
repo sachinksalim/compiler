@@ -1,0 +1,32 @@
+##
+=, a, 2
+print, a
+label, loop
+=, b, 7
+print, b
++, a, b
+print, a
+=, c, 50
+print, c
+ifgoto, leq, a, c, loop
+call, foo
+exit
+label, foo
+/, a, b
+print, a
+ret
+##
+=, b, 1
+=, a, 3
+=, i, 10
+=, c, 1
+call, loop
+print, b
+exit
+label, loop
++, a, b
+print, b
++, b, c
+ifgoto, geq, b, i, loop
+print, a
+ret
