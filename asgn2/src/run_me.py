@@ -123,7 +123,7 @@ def print_asm(line, symbol_table, line_var_list):
             elif line[2] == 'gt':
                 print ("\tjg ", end = "")
             elif line[2] == 'geq':
-                print ("\tgje ", end = "")
+                print ("\tjge ", end = "")
             elif line[2] == 'eq':
                 print ("\tje ", end = "")
             elif line[2] == 'neq':
@@ -354,7 +354,7 @@ if __name__ == '__main__':
         process(block)
         inst_no += 1
     
-    with open('print_int.s') as fp:
+    with open('./src/print_int.s') as fp:
         print_int = fp.read() # Assembly function to print Integer
     print(print_int)
 
