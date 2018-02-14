@@ -22,7 +22,7 @@ lang = operators + keywords
 # Variables
 basic_blocks = [] # The list of blocks
 
-print_exit = '\nend_label:\n\
+print_exit = '\n_end:\n\
     movl $1, %eax\n\
     movl $0, %ebx\n\
     int $0x80'
@@ -141,7 +141,7 @@ def print_asm(line, symbol_table, line_var_list):
     elif op == 'ret':
         if line_var_list:
             var = line_var_list[0]
-            if reg_desc[var]['loc'] != 'reg' or reg_desc[var]['reg_val'] != 'eax':
+            if addr_desc[var]['loc'] != 'reg' or addr_desc[var]['reg_val'] != 'eax':
                 movex86('eax', reg_desc['eax']['content'], 'R2M')
                 if reg_desc[var]['loc'] == 'mem':
                     movex86(var, 'eax', 'M2R')
@@ -151,36 +151,18 @@ def print_asm(line, symbol_table, line_var_list):
     elif op == 'print':
             var = line_var_list[0] # var stores the var whose value is to be printed
             var_reg = addr_desc[var]['reg_val'] # var_reg : its corresponding register
-            # for print we would need to do
-            # movl $4, %eax
-            # movl $1, %ebx
-            # and move the contents of the register to be printed to ecx
-            # so lets just free all the registers
-            temp_print = []
+            free_reg_list = []
             for reg in reg_list:
                 if reg_desc[reg]['state'] == 'loaded':
-                    src = reg
-                    dest = reg_desc[reg]['content']
-                    print ("\tmovl %"+src+', '+dest)
-                    temp_print.append((src,dest))
-                    reg_desc[src]['state'] = 'empty'
-                    reg_desc[src]['content'] = None
-                    addr_desc[dest]['loc'] = 'mem'
-                    addr_desc[dest]['reg_val'] = None
-            # lets push the value of the variable onto the stack
+                    free_reg_list.append((reg, reg_desc[reg]['content']))
+                    movex86(reg, reg_desc[reg]['content'], 'R2M')
+
             print ('\tpushl '+var)
             print ('\tcall __printInt')
             print ('\tpopl ' +var)
 
-            for x in temp_print:
-                src = x[1]
-                dest_reg = x[0]
-                print ("\tmovl "+src+', %'+dest_reg)
-                reg_desc[dest_reg]['state'] = 'loaded'
-                reg_desc[dest_reg]['content'] = src
-                addr_desc[src]['loc'] = 'reg'
-                addr_desc[src]['reg_val'] = dest_reg
-
+            for elem in free_reg_list:
+                movex86(elem[1], elem[0], 'M2R')
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -329,54 +311,10 @@ if __name__ == '__main__':
         process(block)
         inst_no += 1
     
-    print_int = '\n__printInt:\n\
-    movl 4(%esp), %ecx\n\
-    cmpl $0, %ecx\n\
-    jge __positive\n\
-    notl %ecx\n\
-    inc %ecx\n\
-    movl %ecx, %edi\n\
-    movl $45, %eax\n\
-    pushl   %eax\n\
-    movl $4, %eax\n\
-    movl $1, %ebx\n\
-    movl %esp, %ecx\n\
-    movl $1, %edx\n\
-    int $0x80\n\
-    popl %eax\n\
-    movl %edi, %ecx\n\n\
-__positive:\n\
-    movl %ecx, %eax\n\
-    movl %esp, %esi\n\n\
-__iterate:\n\
-    cdq\n\
-    movl $10, %ebx\n\
-    idivl %ebx\n\
-    pushl %edx\n\
-    cmpl $0, %eax\n\
-    jne __iterate\n\
-    jmp __printNum\n\
-    \n\
-__printNum:\n\
-    popl %edx\n\
-    addl $48, %edx\n\
-    pushl %edx\n\
-    movl $4, %eax\n\
-    movl $1, %ebx\n\
-    movl %esp, %ecx\n\
-    movl $1, %edx\n\
-    int $0x80\n\
-    popl %edx\n\
-    cmp %esp, %esi\n\
-    jne __printNum\n\
-    movl $4, %eax\n\
-    movl $1, %ebx\n\
-    movl $new, %ecx\n\
-    movl $1, %edx\n\
-    int $0x80\n\
-    ret  \n\n'
-
+    with open('print_int.s') as fp:
+        print_int = fp.read() # Assembly function to print Integer
     print(print_int)
+
     print ('\t.section .data')
     for word in var_set:
         print (word+":\t.long 0")
