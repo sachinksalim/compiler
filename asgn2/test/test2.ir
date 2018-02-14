@@ -1,11 +1,51 @@
-=, b, 3
-=, c, 5
-print, b
+=, a, 30
+=, b, 8
+=, c, 54
 print, c
-=, a, b
+print, b
 print, a
+label, loop
+ifgoto, geq, a, c, exitloop
++, a, b
+print, a
+goto, loop
+label, exitloop
+call, foo
+exit
+function, foo
 /, a, b
 print, a
-%, c, b
-print, c
-exit
+ret
+
+##
+Corresponding JS code
+
+a = 30;
+b = 8;
+c = 54;
+console.log(c);
+console.log(b);
+console.log(a);
+
+while (a < c) {
+    a += b;
+    console.log(a);
+}
+
+foo();
+
+function foo() {
+    a /= b;
+    console.log(a);
+}
+##
+
+## output
+50
+8
+30
+38
+46
+54
+6
+##
