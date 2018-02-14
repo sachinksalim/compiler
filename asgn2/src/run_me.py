@@ -361,5 +361,5 @@ if __name__ == '__main__':
     print ('\t.section .data')
     for word in var_set:
         print (word+":\t.long 0")
-    print ('new:')
+    print ('newline:')
     print ('\t.ascii "\\n"')
