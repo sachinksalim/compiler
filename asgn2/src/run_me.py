@@ -12,8 +12,8 @@ rel_ops = ['lt', 'leq', 'gt', 'geq', 'eq', 'neq']
 logic_ops = ['!', '&&', '||']
 operators = arith_ops + rel_ops + logic_ops + ['=']
 
-non_vars = ['label', 'call', 'function']
-keywords = ['ifgoto', 'goto', 'ret', 'print', 'exit'] + non_vars
+non_vars = ['label', 'function']
+keywords = ['call', 'ifgoto', 'goto', 'ret', 'print', 'exit'] + non_vars
 
 label_ids = set()
 
@@ -85,34 +85,37 @@ def print_asm(line, symbol_table, line_var_list):
             line_reg_list.append('%'+reg)
 
 
-        if op == '=':
-            t = line[-1]
+        if op in ['=', 'ifgoto']+arith_ops:
+            src = line[-1]
+            if op == 'ifgoto':
+                src = line[-2]            
             try:
-                int(t)
+                int(src)
             except:
-                t = line_reg_list[-1]
+                src = line_reg_list[-1]
             else:
-                t = '$'+t            
-            print ("\tmovl "+t+", "+ line_reg_list[0])
+                src = '$'+src
+        if op == '=':            
+            print ("\tmovl "+src+", "+ line_reg_list[0])
 
         elif op in ['label', 'function']:
             print ( "\n" + line[2]+":")
         elif op == '!':     # logical not operation
             print ("\tnotl "+line_reg_list[0])
         elif op == '+':
-             print ("\taddl "+line_reg_list[1]+", "+line_reg_list[0])
+             print ("\taddl "+src+", "+line_reg_list[0])
         elif op == '-':
-            print ("\tsubl "+line_reg_list[1]+", "+line_reg_list[0])
+            print ("\tsubl "+src+", "+line_reg_list[0])
         elif op == '*':
-            print ("\timul "+line_reg_list[1]+", "+line_reg_list[0])
+            print ("\timul "+src+", "+line_reg_list[0])
         elif op == 'goto':
             print ("\tjmp "+ line[2])
         elif op == '&&':    # 'and' operator    
-            print ("\tandl "+line_reg_list[1]+", "+line_reg_list[0])
+            print ("\tandl "+src+", "+line_reg_list[0])
         elif op == '||':    # 'or' operator    
-            print ("\torl "+line_reg_list[1]+", "+line_reg_list[0])
+            print ("\torl "+src+", "+line_reg_list[0])
         elif op == 'ifgoto':
-            print ("\tcmp "+line_reg_list[1]+", "+line_reg_list[0])
+            print ("\tcmp "+src+", "+line_reg_list[0])
             if line[2] == 'lt':
                 print ("\tjl ", end = "")
             elif line[2] == 'leq':
@@ -120,7 +123,7 @@ def print_asm(line, symbol_table, line_var_list):
             elif line[2] == 'gt':
                 print ("\tjg ", end = "")
             elif line[2] == 'geq':
-                print ("\tjge ", end = "")
+                print ("\tgje ", end = "")
             elif line[2] == 'eq':
                 print ("\tje ", end = "")
             elif line[2] == 'neq':
@@ -137,16 +140,44 @@ def print_asm(line, symbol_table, line_var_list):
     elif op == 'exit':
         print(print_exit)
     elif op == 'call':
-        print ("\tcall "+line[2])
+        if line_var_list:
+            var = line_var_list[0]
+            # if reg_desc['eax']['state'] == 'loaded':
+            #     if reg_desc['eax']['content'] != var:
+            #         movex86('eax', reg_desc['eax']['content'], 'R2M')
+            # print ("\tcall "+line[2])
+            # (in_reg, reg) = get_reg(var, symbol_table)
+            # if reg != 'eax':
+            #     movex86(reg, 'eax', 'R2R')
+
+            free_reg_list = []
+            for reg in reg_list:
+                if reg_desc[reg]['state'] == 'loaded':
+                    print ('\tpushl %'+reg)
+                    free_reg_list.append(reg)
+                    # movex86(reg, reg_desc[reg]['content'], 'R2M')
+            print ("\tcall "+line[2])
+            movex86('eax', var, 'R2M')
+
+            for elem in reversed(free_reg_list):
+                print ('\tpopl %'+elem)
+
+            # addr_desc[var]['loc'] = 'reg'
+            # addr_desc[var]['reg_val'] = 'eax'
+            # reg_desc['eax']['state'] = 'loaded'
+            # reg_desc['eax']['content'] = var
+
     elif op == 'ret':
         if line_var_list:
             var = line_var_list[0]
+            if addr_desc[var]['loc'] == 'reg' and addr_desc[var]['reg_val'] != 'eax':
+                movex86(addr_desc[var]['reg_val'], var, 'R2M')
             if addr_desc[var]['loc'] != 'reg' or addr_desc[var]['reg_val'] != 'eax':
                 movex86('eax', reg_desc['eax']['content'], 'R2M')
-                if reg_desc[var]['loc'] == 'mem':
+                if addr_desc[var]['loc'] == 'mem':
                     movex86(var, 'eax', 'M2R')
                 else:
-                    movex86(reg_desc[var]['reg_val'], 'eax', 'R2R')
+                    movex86(addr_desc[var]['reg_val'], 'eax', 'R2R')
         print ("\tret")
     elif op == 'print':
             var = line_var_list[0] # var stores the var whose value is to be printed
@@ -154,15 +185,23 @@ def print_asm(line, symbol_table, line_var_list):
             free_reg_list = []
             for reg in reg_list:
                 if reg_desc[reg]['state'] == 'loaded':
-                    free_reg_list.append((reg, reg_desc[reg]['content']))
-                    movex86(reg, reg_desc[reg]['content'], 'R2M')
+                    if var_reg == reg:
+                        continue
+                    print ('\tpushl %'+reg)
+                    free_reg_list.append(reg)
+                    # movex86(reg, reg_desc[reg]['content'], 'R2M')
+            if var_reg:
+                print ('\tpushl %'+var_reg)
+                print ('\tcall __printInt')
+                print ('\tpopl %' +var_reg)
+            else:
+                print ('\tpushl '+var)
+                print ('\tcall __printInt')
+                print ('\tpopl ' +var)
 
-            print ('\tpushl '+var)
-            print ('\tcall __printInt')
-            print ('\tpopl ' +var)
-
-            for elem in free_reg_list:
-                movex86(elem[1], elem[0], 'M2R')
+            for elem in reversed(free_reg_list):
+                print ('\tpopl %'+elem)
+                # movex86(elem[1], elem[0], 'M2R')
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -232,7 +271,7 @@ def process(block):
             dest = block_var_list_by_line[idx][0]
             symbol_table[dest]['state'] = 'dead'
             start_idx = 0
-            if line[1] == '=':
+            if line[1] in ['=', 'call']:
                 start_idx = 1
             for i in range(start_idx, len(block_var_list_by_line[idx])):
                 src = block_var_list_by_line[idx][i]
@@ -260,7 +299,7 @@ def process(block):
 
 def debug_print(s, level = 0):
     if DEBUG:
-        if level > 1:
+        if level > 0:
             print(s)
 
 def processIR(ir_filename):
@@ -293,8 +332,10 @@ if __name__ == '__main__':
     lang += list(label_ids)
 
     for line in inst_list:
+        if line[1] in non_vars:
+            continue
         for word in line:
-            if word not in lang and line[1] not in non_vars:
+            if word not in lang:
                 try:
                     int(word)
                 except:
