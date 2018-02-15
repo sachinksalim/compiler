@@ -2,7 +2,7 @@
 =, b, 5
 print, a
 print, b
-# checks if a < b
+# check if a < b
 ifgoto, lt, b, a, L1
 ifgoto, eq, a, b, L3
 =, c, -1
