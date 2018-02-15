@@ -1,0 +1,19 @@
+SHELL := /bin/bash
+default:
+	mkdir bin
+	touch bin/codegen
+	chmod +x bin/codegen
+	echo "#! /usr/bin/env python" >> bin/codegen
+	echo "import sys" >> bin/codegen
+	echo "import os" >> bin/codegen
+	echo "test_file = sys.argv[1]" >> bin/codegen
+	echo 'command = "python ./src/run_me.py %s > bin/codegen.s" %(test_file)' >> bin/codegen
+	echo "os.system(command)" >> bin/codegen
+	echo 'command = "as --32 bin/codegen.s -o bin/codegen.o"' >> bin/codegen
+	echo "os.system(command)" >> bin/codegen
+	echo 'command = "ld -m elf_i386 bin/codegen.o -o bin/key -lc -dynamic-linker /lib/ld-linux.so.2"' >> bin/codegen
+	echo "os.system(command)" >> bin/codegen
+	echo 'command = "./bin/key"' >> bin/codegen
+	echo "os.system(command)" >> bin/codegen
+clean:
+	rm -r bin
