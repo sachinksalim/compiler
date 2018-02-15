@@ -22,6 +22,7 @@ print, b
 =, const1, a
 +, const1, b
 print, const1
++, a, 1
 =, d, a
 +, d, b
 ret, d
@@ -47,10 +48,11 @@ var c = fun(a,b);
 console.log(c);
 console.log(a)
 
-function fun(a, b){
+function fun(){
         console.log(a);
         console.log(b);
         console.log(a+b);
+        a++;
         d = a+b;
         return d;
 }
@@ -67,6 +69,6 @@ function fun(a, b){
 12
 13
 25
-25
-12
+26
+13
 ##
