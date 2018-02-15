@@ -139,48 +139,28 @@ def print_asm(line, symbol_table, line_var_list):
 
     elif op == 'exit':
         print(print_exit)
+        
     elif op == 'call':
-        if line_var_list:
-            var = line_var_list[0]
-            # if reg_desc['eax']['state'] == 'loaded':
-            #     if reg_desc['eax']['content'] != var:
-            #         movex86('eax', reg_desc['eax']['content'], 'R2M')
-            # print ("\tcall "+line[2])
-            # (in_reg, reg) = get_reg(var, symbol_table)
-            # if reg != 'eax':
-            #     movex86(reg, 'eax', 'R2R')
-
-            free_reg_list = []
-            for reg in reg_list:
-                if reg_desc[reg]['state'] == 'loaded':
-                    print ('\tpushl %'+reg)
-                    free_reg_list.append(reg)
-                    # movex86(reg, reg_desc[reg]['content'], 'R2M')
-            print ("\tcall "+line[2])
-            movex86('eax', var, 'R2M')
-
-            for elem in reversed(free_reg_list):
-                print ('\tpopl %'+elem)
-
-            # addr_desc[var]['loc'] = 'reg'
-            # addr_desc[var]['reg_val'] = 'eax'
-            # reg_desc['eax']['state'] = 'loaded'
-            # reg_desc['eax']['content'] = var
-        else:
-            print ("\tcall "+line[2])
+        for reg in reg_list:
+            if reg_desc[reg]['state'] == 'loaded':
+                var = reg_desc[reg]['content']
+                reg_desc[reg]['state'] = 'empty'
+                reg_desc[reg]['content'] = None
+                addr_desc[var]['loc'] = 'mem'
+                addr_desc[var]['reg_val'] = None
+        print ("\tcall "+line[2])
+        if line_var_list:            
+            movex86('eax', line_var_list[0], 'R2M')
 
     elif op == 'ret':
+        for reg in reg_list:
+            if reg_desc[reg]['state'] == 'loaded':
+                movex86(reg, reg_desc[reg]['content'], 'R2M')
         if line_var_list:
             var = line_var_list[0]
-            if addr_desc[var]['loc'] == 'reg':
-                movex86(addr_desc[var]['reg_val'], var, 'R2M')
-            # if addr_desc[var]['loc'] != 'reg' or addr_desc[var]['reg_val'] != 'eax':
-            #     movex86('eax', reg_desc['eax']['content'], 'R2M')
-                if addr_desc[var]['loc'] == 'mem':
-                    movex86(var, 'eax', 'M2R')
-                else:
-                    movex86(addr_desc[var]['reg_val'], 'eax', 'R2R')
+            movex86(var, 'eax', 'M2R')
         print ("\tret")
+
     elif op == 'print':
             var = line_var_list[0] # var stores the var whose value is to be printed
             var_reg = addr_desc[var]['reg_val'] # var_reg : its corresponding register
@@ -191,7 +171,6 @@ def print_asm(line, symbol_table, line_var_list):
                         continue
                     print ('\tpushl %'+reg)
                     free_reg_list.append(reg)
-                    # movex86(reg, reg_desc[reg]['content'], 'R2M')
             if var_reg:
                 print ('\tpushl %'+var_reg)
                 print ('\tcall __printInt')
@@ -203,7 +182,6 @@ def print_asm(line, symbol_table, line_var_list):
 
             for elem in reversed(free_reg_list):
                 print ('\tpopl %'+elem)
-                # movex86(elem[1], elem[0], 'M2R')
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
