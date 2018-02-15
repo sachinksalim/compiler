@@ -1,19 +1,15 @@
-=, a, 10 
+=, a, 10
+=, b, 4
+=, c, 2 
 +, a, 5
-print, a
-+, a, 5
-print, a
-+, a, 1
 print, a
 -, a, 12
 print, a
--, a, 2
+*, a, 4
 print, a
-*, a, 3
+/, a, b
 print, a
-/, a, 2
-print, a
-%, a, 4
+%, a, c
 print, a
 =, x, 5
 =, y, 6
@@ -29,24 +25,21 @@ print, b
 exit
 
 ##
-Corresponding JS code
+JS code
 
 var a = 10;
-a += 5;
+var b = 4;
+var c = 2;
 console.log(a);
 a = a+5;
 console.log(a);
-a++;
-console.log(a);
 a = a-12;
 console.log(a);
-a -= 2;
+a = a*4;
 console.log(a);
-a = a*3;
+a = a/b;
 console.log(a);
-a = a/2;
-console.log(a);
-a = a%4;
+a = a%c;
 console.log(a);
 var x = 5;
 var y = 6;
@@ -55,17 +48,17 @@ console.log(x);
 console.log(y);
 console.log(z);
 console.log(x+y+z);
+
 ##
 
-## output
+## 
+Expected output
+
 15
-20
-21
-9
-7
-21
-10
-2
+3
+12
+3
+1
 5
 6
 11
