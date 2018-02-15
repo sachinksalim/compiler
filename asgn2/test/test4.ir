@@ -10,10 +10,18 @@ print, a
 print, a
 =, a, 12
 =, b, 13
+print, a
+print, b
 call, fun, c
 print, c
+print, a
 exit
 label, fun
+print, a
+print, b
+=, temp, a
++, temp, b
+print, temp
 +, a, b
 ret, a
 
@@ -32,11 +40,17 @@ a = a*b;
 console.log(a);
 a = 12;
 b = 13;
-var c = fun(a,5);
+console.log(a);
+console.log(b);
+var c = fun(a,b);
 console.log(c);
+console.log(a)
 
 function fun(a, b){
+        console.log(a);
+        console.log(b);
         console.log(a+b);
+        a = a+b;
         return a;
 }
 ##
@@ -47,5 +61,9 @@ function fun(a, b){
 9
 4
 20
+12
+13
+25
+25
 25
 ##
