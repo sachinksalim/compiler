@@ -32,9 +32,9 @@ def form_blocks(inst_list):
     block_leaders = set() # block_leaders stores the line numbers of the block leaders
     block_leaders.add(1)  # since the first line is always a leader
     for line in inst_list:
-        if line[1] in ['call', 'ifgoto']:
+        if line[1] in ['call', 'ifgoto', 'ret', 'exit']:
             block_leaders.add(int(line[0])+1) # next line
-        elif line[1] in ['label', 'function']:
+        elif line[1] in non_vars:
             block_leaders.add(int(line[0])) # current line
             label_ids.add(line[-1])
     
@@ -72,10 +72,15 @@ def content(block):
 def print_asm(line, symbol_table, line_var_list):
     op = line[1]
     # print ("op: ", op)
-    bad_ops = ['/', '%', 'ret', 'call', 'print', 'exit']
+    bad_ops = ['/', '%', 'ret', 'call', 'print', 'exit', 'goto']
 
     line_reg_list = []
     debug_print(line)
+    # if op in ['call', 'ret', 'goto']:
+    #     for reg in reg_list:
+    #         if reg_desc[reg]['state'] == 'loaded':
+    #             movex86(reg, reg_desc[reg]['content'], 'R2M')
+
     if op not in bad_ops:
         for var in line_var_list:
             (in_reg, reg) = get_reg(var, symbol_table)
@@ -85,7 +90,7 @@ def print_asm(line, symbol_table, line_var_list):
             line_reg_list.append('%'+reg)
 
 
-        if op in ['=', 'ifgoto']+arith_ops:
+        if op in ['=', 'ifgoto','+', '-', '*']:
             src = line[-1]
             if op == 'ifgoto':
                 src = line[-2]            
@@ -108,8 +113,6 @@ def print_asm(line, symbol_table, line_var_list):
             print ("\tsubl "+src+", "+line_reg_list[0])
         elif op == '*':
             print ("\timul "+src+", "+line_reg_list[0])
-        elif op == 'goto':
-            print ("\tjmp "+ line[2])
         elif op == '&&':    # 'and' operator    
             print ("\tandl "+src+", "+line_reg_list[0])
         elif op == '||':    # 'or' operator    
@@ -132,33 +135,29 @@ def print_asm(line, symbol_table, line_var_list):
                 print ("No other rel operators!\n")
                 raise SyntaxError
             print(line[5])
+            for reg in reg_list:
+                if reg_desc[reg]['state'] == 'loaded':
+                    movex86(reg, reg_desc[reg]['content'], 'R2M')
         else:
             print ('Invaid operator: '+op+'\n')
             raise SyntaxError
         return
 
+    elif op == 'goto':
+        print ("\tjmp "+ line[2])
+
     elif op == 'exit':
         print(print_exit)
-        
+
     elif op == 'call':
-        for reg in reg_list:
-            if reg_desc[reg]['state'] == 'loaded':
-                var = reg_desc[reg]['content']
-                reg_desc[reg]['state'] = 'empty'
-                reg_desc[reg]['content'] = None
-                addr_desc[var]['loc'] = 'mem'
-                addr_desc[var]['reg_val'] = None
         print ("\tcall "+line[2])
         if line_var_list:            
             movex86('eax', line_var_list[0], 'R2M')
 
     elif op == 'ret':
-        for reg in reg_list:
-            if reg_desc[reg]['state'] == 'loaded':
-                movex86(reg, reg_desc[reg]['content'], 'R2M')
         if line_var_list:
-            var = line_var_list[0]
-            movex86(var, 'eax', 'M2R')
+            movex86(line_var_list[0], 'eax', 'M2R')
+        
         print ("\tret")
 
     elif op == 'print':
@@ -223,6 +222,15 @@ def print_asm(line, symbol_table, line_var_list):
         print('Unhandled Operator!')
         raise SyntaxError
 
+    # if op in ['call', 'label', 'function']:
+    #     for reg in reg_list:
+    #         if reg_desc[reg]['state'] == 'loaded':
+    #             var = reg_desc[reg]['content']
+    #             reg_desc[reg]['state'] = 'empty'
+    #             reg_desc[reg]['content'] = None
+    #             addr_desc[var]['loc'] = 'mem'
+    #             addr_desc[var]['reg_val'] = None
+
 
 def process(block):
     (block_var_set, block_var_list_by_line) = content(block)
@@ -259,11 +267,18 @@ def process(block):
                 symbol_table[src]['next_use'] = idx
             symbol_table_list.insert(0, copy.deepcopy(symbol_table)) # inserts a copy of symbol table to the list
 
-    debug_print('\n____________________________________', 1) 
+    debug_print('\n____________________________________', 1)
+
     if symbol_table:
-        for i in range(len(block)):
+        for i in range(len(block)-1):
             debug_print('\t.............', 1)
             print_asm(block[i], symbol_table_list[i], block_var_list_by_line[i])
+        for reg in reg_list:
+            if reg_desc[reg]['state'] == 'loaded':
+                movex86(reg, reg_desc[reg]['content'], 'R2M')
+        i = len(block) - 1
+        print_asm(block[i], symbol_table_list[i], block_var_list_by_line[i])
+
 
     debug_print('\nCURRENT BLOCK', 1)
     debug_print(block, 1)
@@ -332,7 +347,7 @@ if __name__ == '__main__':
         process(block)
         inst_no += 1
     
-    with open('./src/print_int.s') as fp:
+    with open('print_int.s') as fp:
         print_int = fp.read() # Assembly function to print Integer
     print(print_int)
 
