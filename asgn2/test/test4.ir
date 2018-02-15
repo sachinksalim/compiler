@@ -19,11 +19,12 @@ exit
 label, fun
 print, a
 print, b
-=, temp, a
-+, temp, b
-print, temp
-+, a, b
-ret, a
+=, const1, a
++, const1, b
+print, const1
+=, d, a
++, d, b
+ret, d
 
 ##
 Corresponding JS code
@@ -50,8 +51,8 @@ function fun(a, b){
         console.log(a);
         console.log(b);
         console.log(a+b);
-        a = a+b;
-        return a;
+        d = a+b;
+        return d;
 }
 ##
 
@@ -63,7 +64,9 @@ function fun(a, b){
 20
 12
 13
+12
+13
 25
 25
-25
+12
 ##
