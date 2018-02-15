@@ -1,43 +1,23 @@
 =, t, 0
 =, i, 0
+=, c, 0
+
 label, loop1
-=, const, 10
-ifgoto, geq, i, const, exitloop1
+ifgoto, geq, i, 10, exitloop1
 +, t, i
-=, const, 2
-+, t, const
++, t, 2
 print, t
-=, const, 1
-+, i, const
++, i, 1
 goto, loop1
 label, exitloop1
-=, t, 0
-=, i, 15
-label, loop2
-=, const, 5
-ifgoto, lt, i, const, exitloop2
-+, t, i
-=, const, 2
-+, t, const
-print, t
-=, const, 1
--, i, const
-goto, loop2
-label, exitloop2
+
 exit
 
 ## JS code
 var t = 0;
 for (var i = 0; i <10; i++) {
-    text += i+2;
+    t += i+2;
     console.log(t);
-}
-
-var t = 0, i = 15 ;
-while (i >= 5) {
-    text += i+2;
-    console.log(t);
-    i--;
 }
 ##
 
@@ -52,15 +32,4 @@ while (i >= 5) {
 44
 54
 65
-17
-33
-48
-62
-75
-87
-98
-108
-117
-125
-132
 ##
