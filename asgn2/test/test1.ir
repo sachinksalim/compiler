@@ -1,27 +1,19 @@
-=, a, 10
-=, temp, 5 
-+, a, temp
+=, a, 10 
++, a, 5
 print, a
-=, temp, 5
-+, a, temp
++, a, 5
 print, a
-=, temp, 1
-+, a, temp
++, a, 1
 print, a
-=, temp, 12
--, a, temp
+-, a, 12
 print, a
-=, temp, 2
--, a, temp
+-, a, 2
 print, a
-=, temp, 3
-*, a, temp
+*, a, 3
 print, a
-=, temp, 2
-/, a, temp
+/, a, 2
 print, a
-=, temp, 4
-%, a, temp
+%, a, 4
 print, a
 =, x, 5
 =, y, 6
@@ -54,7 +46,7 @@ a = a*3;
 console.log(a);
 a = a/2;
 console.log(a);
-a = a%2;
+a = a%4;
 console.log(a);
 var x = 5;
 var y = 6;
