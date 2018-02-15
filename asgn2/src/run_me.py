@@ -27,6 +27,12 @@ print_exit = '\n_end:\n\
     movl $0, %ebx\n\
     int $0x80'
 
+print_newline = 'movl $4, %eax\n\
+    movl $1, %ebx\n\
+    movl $newline, %ecx\n\
+    movl $1, %edx\n\
+    int $0x80'
+
 def form_blocks(inst_list):
     basic_blocks = []
     block_leaders = set() # block_leaders stores the line numbers of the block leaders
@@ -161,26 +167,30 @@ def print_asm(line, symbol_table, line_var_list):
         print ("\tret")
 
     elif op == 'print':
+        if line_var_list:
             var = line_var_list[0] # var stores the var whose value is to be printed
             var_reg = addr_desc[var]['reg_val'] # var_reg : its corresponding register
-            free_reg_list = []
-            for reg in reg_list:
-                if reg_desc[reg]['state'] == 'loaded':
-                    if var_reg == reg:
-                        continue
-                    print ('\tpushl %'+reg)
-                    free_reg_list.append(reg)
+        free_reg_list = []
+        for reg in reg_list:
+            if reg_desc[reg]['state'] == 'loaded':
+                if line_var_list and var_reg == reg:
+                    continue
+                print ('\tpushl %'+reg)
+                free_reg_list.append(reg)
+        if not line_var_list:
+            print(print_newline)
+        else:
             if var_reg:
                 print ('\tpushl %'+var_reg)
-                print ('\tcall __printInt')
+                print ('\tcall __printInt')                    
                 print ('\tpopl %' +var_reg)
             else:
                 print ('\tpushl '+var)
                 print ('\tcall __printInt')
                 print ('\tpopl ' +var)
 
-            for elem in reversed(free_reg_list):
-                print ('\tpopl %'+elem)
+        for elem in reversed(free_reg_list):
+            print ('\tpopl %'+elem)
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -221,16 +231,6 @@ def print_asm(line, symbol_table, line_var_list):
     else:
         print('Unhandled Operator!')
         raise SyntaxError
-
-    # if op in ['call', 'label', 'function']:
-    #     for reg in reg_list:
-    #         if reg_desc[reg]['state'] == 'loaded':
-    #             var = reg_desc[reg]['content']
-    #             reg_desc[reg]['state'] = 'empty'
-    #             reg_desc[reg]['content'] = None
-    #             addr_desc[var]['loc'] = 'mem'
-    #             addr_desc[var]['reg_val'] = None
-
 
 def process(block):
     (block_var_set, block_var_list_by_line) = content(block)
