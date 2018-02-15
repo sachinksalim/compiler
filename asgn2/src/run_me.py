@@ -90,9 +90,9 @@ def print_asm(line, symbol_table, line_var_list):
     if op not in bad_ops:
         for var in line_var_list:
             (in_reg, reg) = get_reg(var, symbol_table)
-            if len(line_var_list) > 1:
-                if not in_reg:
-                    print ("\tmovl "+var+", %"+reg)
+            # if len(line_var_list) > 1:
+            if not in_reg:
+                print ("\tmovl "+var+", %"+reg)
             line_reg_list.append('%'+reg)
 
 
@@ -347,7 +347,7 @@ if __name__ == '__main__':
         process(block)
         inst_no += 1
     
-    with open('print_int.s') as fp:
+    with open('./src/print_int.s') as fp:
         print_int = fp.read() # Assembly function to print Integer
     print(print_int)
 
