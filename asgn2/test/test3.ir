@@ -2,7 +2,8 @@
 =, b, 5
 print, a
 print, b
-ifgoto, lt, b, a, L1 # checks if a < b
+# checks if a < b
+ifgoto, lt, b, a, L1
 ifgoto, eq, a, b, L3
 =, c, -1
 print, c
