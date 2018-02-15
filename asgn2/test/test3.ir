@@ -2,9 +2,9 @@
 =, b, 3
 print, a
 print, b
-# check if a < b, then jumps to L1
+# check if a < b, if correct then jumps to L1, otherwise goto to line below it
 ifgoto, lt, a, b, L1 
-# check if a == b, then jumps to L3
+# check if a == b, if correct then jumps to L3, otherwise goto to line below it
 ifgoto, eq, a, b, L3
 =, c, -1
 print, c
