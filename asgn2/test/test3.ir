@@ -2,7 +2,7 @@
 =, b, 5
 print, a
 print, b
-ifgoto, lt, a, b, L1
+ifgoto, lt, b, a, L1 # checks if a < b
 ifgoto, eq, a, b, L3
 =, c, -1
 print, c
@@ -39,5 +39,5 @@ else {
 ##output
 4
 5
-1
+-1
 ##
