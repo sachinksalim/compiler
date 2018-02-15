@@ -30,12 +30,9 @@ To convert the 3 Address code into assembly code, say for the testcase 'test1.ir
 ```
 Above commands prints the required assembly code to the terminal output.
 
-To run the assembly code generated, do the following:
+To execute the assembly code generated, do the following:
 ```
   cd asgn2
-  make
-  bin/codegen test/test1.ir > codegen.s
-  as --32 codegen.s -o codegen.o
-  ld -m elf_i386 codegen.o -o key -lc -dynamic-linker /lib/ld-linux.so.2
-  ./key
+  make -f Execute
+  bin/codegen test/test1.ir
 ```
