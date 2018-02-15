@@ -12,6 +12,7 @@ print, a
 =, b, 13
 print, a
 print, b
+print
 call, fun, c
 print, c
 print, a
@@ -25,6 +26,7 @@ print, const1
 +, a, 1
 =, d, a
 +, d, b
+print
 ret, d
 
 ##
@@ -47,13 +49,14 @@ console.log(b);
 var c = fun(a,b);
 console.log(c);
 console.log(a)
-
+console.log('\n')
 function fun(){
         console.log(a);
         console.log(b);
         console.log(a+b);
         a++;
         d = a+b;
+        console.log('\n')
         return d;
 }
 ##
@@ -66,9 +69,11 @@ function fun(){
 20
 12
 13
+
 12
 13
 25
+
 26
 13
 ##
