@@ -15,6 +15,7 @@ print, a
 =, y, 6
 =, z, x
 +, z, y
+print
 print, x
 print, y
 print, z
@@ -44,6 +45,7 @@ console.log(a);
 var x = 5;
 var y = 6;
 var z = x + y;
+console.log('\n');
 console.log(x);
 console.log(y);
 console.log(z);
@@ -59,6 +61,7 @@ Expected output
 12
 3
 1
+
 5
 6
 11
