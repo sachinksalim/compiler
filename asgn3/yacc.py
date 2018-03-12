@@ -38,7 +38,30 @@ import sys
 
 # dictionary of names
 names = {}
+# start or program
+def p_start(p):
+    '''start : statements'''
 
+def p_statements(p):
+    '''statements : statement statements
+                  | statement'''
+def p_statement(p):
+    '''statement : block
+                 | SemiColon
+                 | variablestatement
+                 | expressionstatement
+                 | ifstatement
+                 | iterationstatement
+                 | continuestatement
+                 | breakstatement
+                 | returnstatement
+                 | withstatement
+                 | switchstatement
+                 | funcitondeclaration'''
+
+def p_block(p):
+    'block: LeftBrace statements RightBrace'
+### assignment statements ###
 def p_assignment(p):
     'statement : Identifier Assign expression'
     fp_out.write(p_assignment.__doc__ + '\n')
