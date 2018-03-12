@@ -61,6 +61,33 @@ def p_statement(p):
 
 def p_block(p):
     'block: LeftBrace statements RightBrace'
+    
+def p_variablestatement(p):
+    'variablestatement : var variabledeclarationlist SemiColon'
+
+def p_variabledeclarationlist(p):
+    '''variabledeclarationlist : variabledeclaration
+                               | variabledeclaration SemiColon variabledeclarationlist'''
+def p_variabledeclaration(p):
+    '''variabledeclaration : Identifier 
+                           | Identifier Equal singleexpression
+                           | arrayliteral
+                           | arrayliteral Equal singleexpression
+                           | objectliteral
+                           | objectliteral Equal singleexpression'''
+
+def p_expressionstatement(p):
+    'expressionstatement : expressionsequence SemiColon'
+
+def p_ifstatement(p):
+    ''' ifstatement : if LeftParen expressionsequence RightParen statement
+                    | if LeftParen expressionsequence RightParen statement else statement'''
+
+def iterationstatement(p): # not completed
+    '''iterationstatement : do statement while LeftParen expressionsequence RightParen SemiColon
+                          | while LeftParen expressionsequence RightParen statement
+                          | for LeftParen expressionsequence  '''
+
 ### assignment statements ###
 def p_assignment(p):
     'statement : Identifier Assign expression'
