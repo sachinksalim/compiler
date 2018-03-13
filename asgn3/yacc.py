@@ -38,8 +38,9 @@ import sys
 
 # dictionary of names
 names = {}
+
 # start or program
-def p_start(p):
+def p_program(p):
     '''start : statements'''
 
 def p_statements(p):
@@ -61,7 +62,7 @@ def p_statement(p):
 
 def p_block(p):
     'block: LeftBrace statements RightBrace'
-    
+
 def p_variablestatement(p):
     'variablestatement : var variabledeclarationlist SemiColon'
 
@@ -83,12 +84,206 @@ def p_ifstatement(p):
     ''' ifstatement : if LeftParen expressionsequence RightParen statement
                     | if LeftParen expressionsequence RightParen statement else statement'''
 
-def iterationstatement(p): # not completed
-    '''iterationstatement : do statement while LeftParen expressionsequence RightParen SemiColon
-                          | while LeftParen expressionsequence RightParen statement
-                          | for LeftParen expressionsequence  '''
+def p_iterationstatement(p):
+    ''' expressionsequence? : expressionsequence 
+                            | 
+        iterationstatement  : do statement while LeftParen expressionsequence RightParen SemiColon
+                            | while LeftParen expressionsequence RightParen statement
+                            | for LeftParen expressionsequence? SemiColon expressionsequence? SemiColon expressionsequence? RightParen statement
+                            | for LeftParen var variabledeclarationlist SemiColon expressionsequence? SemiColon expressionsequence? RightParen statement
+                            | for LeftParen singleexpression in expressionsequence RightParen statement
+                            | for LeftParen var variabledeclaration in expressionsequence RightParen statement'''
 
-### assignment statements ###
+def p_continuestatement(p):
+    '''continuestatement : continue Identifier SemiColon
+                         | continue SemiCOlon'''
+
+def p_breakstatement(p):
+    '''breakstatement : break Identifier SemiColon
+                      | break SemiColon'''
+def p_returnstatement(p):
+    '''returnstatement : return SemiColon
+                       | return expressionsequence SemiColon'''
+def p_withstatement(p):
+    '''withstatement : with LeftParen expressionsequence RightParen statement'''
+def p_switchstatement(p):
+    '''switchstatement : switch LeftParen expressionsequence RightParen caseblock'''
+def p_caseblock(p):
+    ''' caseclauses? : caseclauses 
+                     |
+        defaultclause_caseclauses?? : defaultclause caseclauses?
+                                   | 
+        caseblock : LeftBrace caseclauses? defaultclause_caseclauses?? RightBrace'''
+def p_caseclauses(p):
+    ''' caseclauses: caseclause caseclauses | caseclause'''
+def p_caseclause(p):
+    ''' caseclause : case expressionsequence Colon statement* 
+        statement* : statement statement* 
+                   | '''
+
+#############################
+def p_defaultclause(p): # default must be added to keywords
+    '''defaultclause : default Colon statement*
+       statement* : statement statement* 
+                   | '''
+################################
+# formalparameterlist is in deleted ones, so we should mostly remove it from below
+
+def p_functiondeclaration(p):
+    '''functiondeclaration : function Identifier LeftParen formalparameterlist? RightParen LeftBrace functionbody RightBrace
+       formalparameterlist? : formalparameterlist 
+                            | '''
+################################
+
+def p_functionbody(p):
+    '''functionbody : sourceelements
+                    | '''
+def p_arrayliteral(p):
+    '''arrayliteral : LeftBracket comma* elementlist? comma* RightBracket
+       elementlist? : elementlist
+                    |   
+       comma* : Comma comma* 
+              | '''
+
+def p_elementlist(p):
+    '''elementlist : singleexpression comma_singleexpression*
+       comma_singleexpression* : Comma singleexpression comma_singleexpression*
+                               | '''
+def p_arguments(p):
+    ''' comma_singleexpression* : Comma singleexpression comma_singleexpression*
+                               | 
+        arguments : LeftParen singleexpression comma_singleexpression* Rightparen
+                  | LeftParen Rightparen '''
+def p_expressionsequence(p):
+    '''comma_singleexpression* : Comma singleexpression comma_singleexpression*
+                               | 
+       expressionsequence : singleexpression comma_singleexpression*'''
+def p_singleexpression(p):
+    ##############
+    ######### doubt in singleexpression first production involving function 
+    ##############
+    ''' Identifer? : Identifer 
+                   | 
+        arguments? : arguments
+                   | 
+        formalparameterlist? : formalparameterlist 
+                            | 
+        incr_decr_plus : Incr
+                       | Decr
+                       | Plus
+                       | Minus
+                       | BinNot
+                       | Not
+        p_m_t_d_m : Plus
+                  | Minus
+                  | Times
+                  | Divide
+                  | Mod
+        shift_l_r_ur : Lshift
+                     | Rshift
+                     | Urshift
+        grt_less : LT
+                 | GT
+                 | LTE
+                 | GTE
+        diffequals : Equal
+                   | NotEqual
+                   | StrEqual
+                   | StrNotEqual
+        binoperators : BinAnd
+                     | BinXor
+                     | BinOr
+                     | And
+                     | Or
+        assignmentoperator : IntoEq
+                           | DivEq
+                           | ModEq
+                           | PlusEq
+                           | MinusEq
+                           | LshiftEq
+                           | RshiftEq
+                           | UrshiftEq
+                           | AndEq
+                           | XorEq
+                           | OrEq
+        singleexpression : function Identifier? LeftParen formalparameterlist? RightParen LeftBrace functionbody RightBrace
+                         | singleexpression LeftBracket expressionsequence RightBracket
+                         | singleexpression Dot identifiername
+                         | singleexpression arguments
+                         | eval LeftParen program  RightParen
+                         | new singleexpression arguments?
+                         | singleexpression Incr
+                         | singleexpression Decr
+                         | delete singleexpression
+                         | void singleexpression
+                         | Typeof singleexpression
+                         | incr_decr_plus singleexpression
+                         | singleexpression p_m_t_d_m singleexpression
+                         | singleexpression shift_l_r_ur singleexpression
+                         | singleexpression grt_less singleexpression
+                         | singleexpression in singleexpression
+                         | singleexpression diffequals singleexpression
+                         | singleexpression binoperators singleexpression
+                         | singleexpression CondOp singleexpression Colon singleexpression
+                         | singleexpression Assign singleexpression
+                         | singleexpression assignmentoperator singleexpression
+                         | this
+                         | undefined
+                         | Identifier
+                         | literal
+                         | arrayliteral
+                         | objectliteral
+                         | LeftParen expressionsequence RightParen '''
+def p_literal(p):
+    '''literal : nullliteral
+               | booleanliteral
+               | stringliteral
+               | templatestringliteral
+               | decimalliteral'''
+def object_literal(p):
+    ''' comma? : Comma
+               | 
+        comma_propertyassignment* : Comma propertyassignment comma_propertyassignment*
+                                  | 
+
+
+        objectliteral : LeftBrace propertyassignment comma_propertyassignment* comma? RightBrace
+                      | LeftBrace comma? RightBrace'''
+def p_propertyassignment(p):
+    '''propertyassignment : propertyname Colon singleexpression
+                          | propertyname Equal singleexpression
+                          | LeftBracket singleexpression RightBracket Colon singleexpression
+                          | Identifier'''
+def p_propertyname(p):
+    '''propertyname : identifiername
+                    | stringliteral
+                    | decimalliteral'''
+def p_identifiername(p):
+    ''' identifiername : Identifier
+                       | reservedword'''
+def p_reservedword(p):
+    '''reservedword : keyword
+                    | nullliteral
+                    | booleanliteral'''
+#######      
+### identifier already deined in lex.py###
+#######
+
+def p_stringliteral(p):
+    'stringliteral : string'
+##############
+### someone complete templatestringliteral ###
+##############
+def p_booleanliteral(p):
+    '''booleanliteral : true
+                      | false'''
+def p_nullliteral(p):
+    '''nullliteral : null'''
+def p_decimalliteral(p):
+    ''' decimalliteral : number'''
+
+#######  Assignment ################# 
+
 def p_assignment(p):
     'statement : Identifier Assign expression'
     fp_out.write(p_assignment.__doc__ + '\n')
