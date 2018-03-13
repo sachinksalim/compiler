@@ -67,7 +67,7 @@ def p_variablestatement(p):
 
 def p_variabledeclarationlist(p):
     '''variabledeclarationlist : variabledeclaration
-                               | variabledeclaration SemiColon variabledeclarationlist'''
+                               | variabledeclaration Comma variabledeclarationlist'''
 def p_variabledeclaration(p):
     '''variabledeclaration : Identifier 
                            | Identifier Equal singleexpression
