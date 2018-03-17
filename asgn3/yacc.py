@@ -8,14 +8,26 @@ def p_program(p):
     'start : statements'
 
 def p_statements(p):
-    '''statements : statement statements 
-    | statement'''
+    '''statements   : statement statements 
+                    | statement'''
 
 def p_statement(p):
-    '''statement : variableStatement 
-    | expressionStatement
-    | printStatement
-    | SemiColon'''
+    '''statement    : block 
+                    | SemiColon
+                    | variableStatement 
+                    | expressionStatement
+                    | ifStatement
+                    | iterationStatement
+                    | continueStatement
+                    | breakStatement
+                    | returnStatement
+                    | withStatement
+                    | switchStatement
+                    | printStatement'''
+                    # functionDeclaration is needed to look because it contains many deleted rules
+
+def p_block(p):
+    'block  : LeftBrace statements RightBrace'
 
 def p_variableStatement(p):
     '''variableStatement : var variableDeclarationList SemiColon
@@ -32,6 +44,58 @@ def p_variableDeclaration(p):
 def p_expressionStatement(p):
     'expressionStatement : expressionSequence SemiColon'
 
+def p_ifStatement(p):
+    ''' ifStatement : if LeftParen expressionSequence RightParen statement
+                    | if LeftParen expressionSequence RightParen statement else statement'''
+
+def p_iterationStatement(p):
+    ''' iterationStatement  : do statement while LeftParen expressionSequence RightParen SemiColon
+                            | while LeftParen expressionSequence RightParen statement
+                            | for LeftParen singleExpression in expressionSequence RightParen statement
+                            | for LeftParen var variableDeclaration in expressionSequence RightParen statement'''
+                         # doubt here   
+                         #   | for LeftParen expressionSequence? SemiColon expressionsequence? SemiColon expressionsequence? RightParen statement
+                         #   | for LeftParen var variabledeclarationlist SemiColon expressionsequence? SemiColon expressionsequence? RightParen statement
+
+def p_continueStatement(p):
+    '''continueStatement : continue Identifier SemiColon
+                         | continue SemiColon'''
+
+def p_breakStatement(p):
+    '''breakStatement : break Identifier SemiColon
+                      | break SemiColon'''
+
+def p_returnStatement(p):
+    '''returnStatement : return expressionSequence SemiColon
+                       | return SemiColon'''
+
+def p_withstatement(p):
+    '''withStatement : with LeftParen expressionSequence RightParen statement'''
+
+def p_switchStatement(p):
+    '''switchStatement : switch LeftParen expressionSequence RightParen caseBlock'''
+
+def p_caseBlock(p):
+    ''' caseBlock : LeftBrace caseClauses defaultClause caseClauses RightBrace
+                  | LeftBrace caseClauses defaultClause RightBrace
+                  | LeftBrace caseClauses RightBrace
+                  | LeftBrace defaultClause caseClauses RightBrace
+                  | LeftBrace defaultClause RightBrace
+                  | LeftBrace RightBrace'''
+
+def p_caseClauses(p):
+    ''' caseClauses : caseClause caseClauses 
+                    | caseClause'''
+
+def p_caseClause(p):
+    ''' caseClause : case expressionSequence Colon statements 
+                   | case expressionSequence Colon'''
+
+def p_defaultClause(p): # default is be added to keywords in lex.py
+    '''defaultClause : default Colon statements
+                     | default Colon'''
+
+##############################################################
 def p_expressionSequence(p):
     '''expressionSequence : singleExpression Comma expressionSequence 
     | singleExpression'''
