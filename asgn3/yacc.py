@@ -1,8 +1,11 @@
 import ply.yacc as yacc
-
 from lex import tokens
-
 import sys
+
+## note that - string_rs => string*
+##             string_rp => string+
+##             string_rq => string?
+
 
 def p_program(p):
     'start : statements'
@@ -58,12 +61,12 @@ def p_ifStatement(p):
 def p_iterationStatement(p):
     ''' iterationStatement  : do statement while LeftParen expressionSequence RightParen SemiColon
                             | while LeftParen expressionSequence RightParen statement
-                            | for LeftParen expressionSequence_r01 SemiColon expressionSequence_r01 SemiColon expressionSequence_r01 RightParen statement
-                            | for LeftParen var variableDeclarationList SemiColon expressionSequence_r01 SemiColon expressionSequence_r01 RightParen statement
+                            | for LeftParen expressionSequence_rq SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
+                            | for LeftParen var variableDeclarationList SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
                             | for LeftParen singleExpression in expressionSequence RightParen statement
                             | for LeftParen var variableDeclaration in expressionSequence RightParen statement
                             
-        expressionSequence_r01 : expressionSequence
+        expressionSequence_rq : expressionSequence
                                | empty'''
 
 def p_continueStatement(p):
@@ -85,10 +88,10 @@ def p_switchStatement(p):
     ''' switchStatement : switch LeftParen expressionSequence RightParen caseBlock'''
 
 def p_caseBlock(p):
-    ''' caseBlock       : LeftBrace caseClauses_r01 defaultClause_caseClauses_r01 RightBrace
-        caseClauses_r01 : caseClauses
+    ''' caseBlock       : LeftBrace caseClauses_rq defaultClause_caseClauses_rq RightBrace
+        caseClauses_rq : caseClauses
                         | empty
-        defaultClause_caseClauses_r01 : defaultClause caseClauses_r01
+        defaultClause_caseClauses_rq : defaultClause caseClauses_rq
                         | empty'''
                 
 
@@ -107,18 +110,18 @@ def p_defaultClause(p):
 ## def p_functionBody(p): remaining
 
 def p_arrayLiteral(p):
-    ''' arrayLiteral : LeftBracket comma_r elementList_r01 comma_r RightBracket
-        elementList_r01 : elementList
+    ''' arrayLiteral : LeftBracket comma_rs elementList_rq comma_rs RightBracket
+        elementList_rq : elementList
                         | empty
-        comma_r : Comma comma_r 
+        comma_rs : Comma comma_rs 
                 | empty'''    
 
 # some doubts in ','+ in grammar of assignment 0 for elementList and arguments
 def p_elementList(p):
-    ''' elementList : singleExpression comma_r1_singleExpression_r
-        comma_r1_singleExpression_r : comma_r1 singleExpression comma_r1_singleExpression_r
+    ''' elementList : singleExpression comma_rp_singleExpression_rs
+        comma_rp_singleExpression_rs : comma_rp singleExpression comma_rp_singleExpression_rs
                                     | empty
-        comma_r1 : Comma comma_r1
+        comma_rp : Comma comma_rp
                  | Comma '''
 
 def p_arguments(p):
@@ -131,7 +134,7 @@ def p_expressionSequence(p):
 
 # doubt in singleExpression first production involving function
 def p_singleExpression(p):
-    ''' arguments_r01 : arguments
+    ''' arguments_rq : arguments
                       | empty
         unaryOp : Incr
                 | Decr
@@ -165,7 +168,7 @@ def p_singleExpression(p):
                          | singleExpression Dot identifierName
                          | singleExpression arguments
                          
-                         | new singleExpression arguments_r01
+                         | new singleExpression arguments_rq
                          | singleExpression Incr
                          | singleExpression Decr
                          | delete singleExpression
@@ -212,11 +215,11 @@ def p_literal(p):
                #| TemplateStringLiteral
                
 def p_objectLiteral(p):
-    ''' objectLiteral : LeftBrace propertyAssignment comma_propertyAssignment_r comma_r01 RightBrace
-                      | LeftBrace comma_r01 RightBrace
-        comma_propertyAssignment_r : Comma propertyAssignment comma_propertyAssignment_r
+    ''' objectLiteral : LeftBrace propertyAssignment comma_propertyAssignment_rs comma_rq RightBrace
+                      | LeftBrace comma_rq RightBrace
+        comma_propertyAssignment_rs : Comma propertyAssignment comma_propertyAssignment_rs
                                    | empty
-        comma_r01 : Comma
+        comma_rq : Comma
                   | empty'''
 
 def p_propertyAssignment(p):
