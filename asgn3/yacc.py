@@ -159,51 +159,48 @@ def p_expressionSequence(p):
 def p_singleExpression(p):
     ''' arguments_rq : arguments
                       | empty
-        unaryOp : Incr
-                | Decr
-                | Plus
-                | Minus
-                | BinNot
-                | Not
+        unaryExpression : Incr singleExpression
+                        | Decr singleExpression
+                        | Plus singleExpression
+                        | Minus singleExpression
+                        | BinNot singleExpression
+                        | Not singleExpression
         arithmeticExpression : singleExpression Plus singleExpression
-                      | singleExpression Minus singleExpression
-                      | singleExpression Times singleExpression
-                      | singleExpression Divide singleExpression
-                      | singleExpression Mod singleExpression
-        shiftOp : Lshift
-                | Rshift
-                | Urshift
-        logicalOpComp : LT
-                       | GT
-                       | LTE
-                       | GTE
-        logicalOpEqual : Equal
-                        | NotEqual
-                        | StrEqual
-                        | StrNotEqual
-        binaryOpBit : BinAnd
-                    | BinXor
-                    | BinOr
-                    | And
-                    | Or
+                             | singleExpression Minus singleExpression
+                             | singleExpression Times singleExpression
+                             | singleExpression Divide singleExpression
+                             | singleExpression Mod singleExpression
+        shiftExpression : singleExpression Lshift singleExpression
+                        | singleExpression Rshift singleExpression
+                        | singleExpression Urshift singleExpression
+        logicalExpression : singleExpression LT singleExpression
+                          | singleExpression GT singleExpression
+                          | singleExpression LTE singleExpression
+                          | singleExpression GTE singleExpression
+        logicalExpression : singleExpression Equal singleExpression
+                          | singleExpression NotEqual singleExpression
+                          | singleExpression StrEqual singleExpression
+                          | singleExpression StrNotEqual singleExpression
+        binaryExpression : singleExpression BinAnd singleExpression
+                         | singleExpression BinXor singleExpression
+                         | singleExpression BinOr singleExpression
+                         | singleExpression And singleExpression
+                         | singleExpression Or singleExpression
 
         singleExpression : singleExpression LeftBracket expressionSequence RightBracket
                          | singleExpression Dot identifierName
                          | singleExpression arguments
-                         
                          | new singleExpression arguments_rq
                          | singleExpression Incr
                          | singleExpression Decr
                          | delete singleExpression
                          | void singleExpression
-                         
-                         | unaryOp singleExpression
+                         | unaryExpression
                          | arithmeticExpression
-                         | singleExpression shiftOp singleExpression
-                         | singleExpression logicalOpComp singleExpression
+                         | shiftExpression
+                         | logicalExpression
                          | singleExpression in singleExpression
-                         | singleExpression logicalOpEqual singleExpression
-                         | singleExpression binaryOpBit singleExpression
+                         | binaryExpression
                          | singleExpression CondOp singleExpression Colon singleExpression
                          | singleExpression Assign singleExpression
                          | singleExpression assignmentOperator singleExpression
