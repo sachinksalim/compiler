@@ -6,12 +6,12 @@ firefox test.html
 ```
 The directory asgn3 contains the folders "src" and "test", a Makefile and a Readme
 
-The "src" folder further contains the files lex.py, yacc.py, process_log.py and parser.
-"lex.py" is the lexer and when given a string of characters produces valid tokens.
-"yacc.py" contains the grammar which ensures the correct syntax of the given code.
+The "src" folder further contains the files lex.py, yacc.py, process_log.py and parser
+"lex.py" is the lexer and when given a string of characters produces valid tokens
+"yacc.py" contains the grammar which ensures the correct syntax of the given code
 The "test" folder contains 5 different test cases.
 
-Command "make" when in the directory "/asgn3" creates the folder "bin" and creates the executalbe "parser" in it.
+Command "make" when in the directory "/asgn3" creates the folder "bin" and creates the executable "parser" in it.
 
 The executalbe "parser" has the following lines:
 ```#!/bin/bash
