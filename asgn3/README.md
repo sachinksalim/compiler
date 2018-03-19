@@ -1,5 +1,8 @@
-Usage:
+
 ```
+Usage:
+-----
+
 make
 bin/parser test/test.js
 firefox test.html
