@@ -30,8 +30,8 @@ def p_statement(p):
                   | returnStatement
                   | withStatement
                   | switchStatement
-                  | printStatement'''
-                  # functionDeclaration is needed to look because it contains many deleted rules
+                  | printStatement
+                  | functionDeclaration'''  # is needed to look because it contains many deleted rules
 
 def p_block(p):
     ''' block : LeftBrace statements RightBrace'''
@@ -105,7 +105,17 @@ def p_caseClause(p):
 def p_defaultClause(p):
     ''' defaultClause : default Colon statements'''
 
-## def p_functionDeclaration(p): remaining
+def p_functionDeclaration(p):
+    ''' functionDeclaration : function Identifier LeftParen formalParameterList_rq RightParen LeftBrace statements RightBrace
+        formalParameterList_rq : formalParameterList
+                               | empty'''
+
+def p_formalParameterList(p):
+    ''' formalParameterList : varDC Comma formalParameterList
+                            | varDC
+        varDC : Identifier
+              | Identifier Assign Number
+              | Identifier Assign String'''
 
 ## def p_functionBody(p): remaining
 
