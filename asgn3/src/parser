@@ -1,0 +1,3 @@
+#!/bin/bash
+python3 ./src/yacc.py $1 2> bin/debug.log
+python3 ./src/process_log.py
