@@ -193,6 +193,7 @@ def p_singleExpression(p):
                          | LeftParen expressionSequence RightParen'''
                          #| eval LeftParen program  RightParen
                          #| Typeof singleExpression
+                         #| function Identifier? LeftParen formalparameterlist? RightParen LeftBrace functionbody RightBrace
 
 def p_assignmentOperator(p):
     ''' assignmentOperator : IntoEq
@@ -233,7 +234,7 @@ def p_propertyName(p):
                     | StringLiteral
                     | DecimalLiteral'''
 
-def p_identifierName(p):
+def p_identifierName(p): # Identifier already defined in lex.py#
     ''' identifierName : Identifier
                        | reservedWord'''
 
@@ -241,10 +242,8 @@ def p_reservedWord(p):
     '''reservedWord : NullLiteral
                     | BooleanLiteral'''
                     #| keywords'''  # how to include keywords of lex.py
-                    
-# identifier already deined in lex.py#
 
-def p_StringLiteral(p): # string is defined in lex.py
+def p_StringLiteral(p): # String defined in lex.py
     ''' StringLiteral : String'''
 
 ## def p_TemplateStringLiteral(p): remaining    
@@ -256,7 +255,7 @@ def p_BooleanLiteral(p):
 def p_NullLiteral(p):
     ''' NullLiteral : null'''
 
-def p_DecimalLiteral(p): # Number is defined in lex.py
+def p_DecimalLiteral(p): # Number defined in lex.py
     ''' DecimalLiteral : Number'''
 
 def p_printStatement(p):
