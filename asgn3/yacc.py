@@ -6,9 +6,25 @@ import sys
 ##             string_rp => string+
 ##             string_rq => string?
 
+# Precedence and associativity of operators
+precedence = (
+    ('left', 'Or'),
+    ('left', 'And'),
+    ('left', 'BinOr'),
+    ('left', 'BinXor'),
+    ('left', 'BinAnd'),
+    ('left', 'Equal', 'NotEqual', 'StrEqual', 'StrNotEqual'),
+    ('left', 'GT', 'GTE', 'LT', 'LTE'),
+    ('left', 'Rshift', 'Lshift', 'Urshift'),
+    ('left', 'Plus', 'Minus'),
+    ('left', 'Times', 'Divide', 'Mod'),
+    ('right', 'Not', 'BinNot'),
+    ('left', 'Dot')
+)
+
 
 def p_program(p):
-    'start : statements'
+    ''' start : statements'''
 
 def p_empty(p):
     ''' empty :'''
@@ -30,8 +46,7 @@ def p_statement(p):
                   | returnStatement
                   | withStatement
                   | switchStatement
-                  | printStatement
-                  | functionDeclaration'''  # is needed to look because it contains many deleted rules
+                  | functionDeclaration'''
 
 def p_block(p):
     ''' block : LeftBrace statements RightBrace'''
@@ -117,8 +132,6 @@ def p_formalParameterList(p):
               | Identifier Assign Number
               | Identifier Assign String'''
 
-## def p_functionBody(p): remaining
-
 def p_arrayLiteral(p):
     ''' arrayLiteral : LeftBracket comma_rs elementList_rq comma_rs RightBracket
         elementList_rq : elementList
@@ -152,11 +165,11 @@ def p_singleExpression(p):
                 | Minus
                 | BinNot
                 | Not
-        binaryOpAirth : Plus
-                      | Minus
-                      | Times
-                      | Divide
-                      | Mod
+        arithmeticExpression : singleExpression Plus singleExpression
+                      | singleExpression Minus singleExpression
+                      | singleExpression Times singleExpression
+                      | singleExpression Divide singleExpression
+                      | singleExpression Mod singleExpression
         shiftOp : Lshift
                 | Rshift
                 | Urshift
@@ -185,7 +198,7 @@ def p_singleExpression(p):
                          | void singleExpression
                          
                          | unaryOp singleExpression
-                         | singleExpression binaryOpAirth singleExpression
+                         | arithmeticExpression
                          | singleExpression shiftOp singleExpression
                          | singleExpression logicalOpComp singleExpression
                          | singleExpression in singleExpression
@@ -267,53 +280,6 @@ def p_NullLiteral(p):
 
 def p_DecimalLiteral(p): # Number defined in lex.py
     ''' DecimalLiteral : Number'''
-
-def p_printStatement(p):
-    'printStatement : console Dot log LeftParen factor RightParen'
-
-def p_expression_plus(p):
-    'expression : expression Plus term'
-    p[0] = p[1] + p[3]
-
-def p_expression_minus(p):
-    'expression : expression Minus term'
-    p[0] = p[1] - p[3]
-
-def p_expression_term(p):
-    'expression : term'
-    p[0] = p[1]
-
-def p_term_times(p):
-    'term : term Times factor'
-    p[0] = p[1] * p[3]
-
-def p_term_div(p):
-    'term : term Divide factor'
-    p[0] = p[1] / p[3]
-
-def p_term_factor(p):
-    'term : factor'
-    p[0] = p[1]
-
-def p_factor_num(p):
-    'factor : Number'
-    p[0] = p[1]
-
-def p_factor_id(p):
-    'factor : Identifier'
-    p[0] = p[1]
-
-def p_factor_expr(p):
-    'factor : LeftParen expression RightParen'
-    p[0] = p[2]
-
-def p_expression_name(p):
-    "expression : Identifier"
-    try:
-        p[0] = names[p[1]]
-    except LookupError:
-        print("Undefined name '%s'" % p[1])
-        p[0] = 0
 
 # Error rule for syntax errors
 def p_error(p):
