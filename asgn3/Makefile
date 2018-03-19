@@ -4,4 +4,4 @@ all:
 	chmod +x bin/parser
 clean:
 	rm -r bin
-	rm test.html
+	rm right-derivation.html
