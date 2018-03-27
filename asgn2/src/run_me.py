@@ -13,7 +13,7 @@ logic_ops = ['!', '&&', '||']
 operators = arith_ops + rel_ops + logic_ops + ['=']
 
 non_vars = ['label', 'function']
-keywords = ['call', 'ifgoto', 'goto', 'ret', 'print', 'exit'] + non_vars
+keywords = ['init', 'call', 'ifgoto', 'goto', 'ret', 'print', 'exit'] + non_vars
 
 label_ids = set()
 
@@ -22,16 +22,35 @@ lang = operators + keywords
 # Variables
 basic_blocks = [] # The list of blocks
 
+strings_list = [] # List of strings
+chars_list  = [] # List of characters
+
 print_exit = '\n_end:\n\
     movl $1, %eax\n\
     movl $0, %ebx\n\
     int $0x80'
 
-print_newline = 'movl $4, %eax\n\
+def print_string(string):
+    str_name = "str" + str(len(strings_list))
+    strings_list.append((str_name, string))
+    print('movl $4, %eax\n\
     movl $1, %ebx\n\
-    movl $newline, %ecx\n\
+    movl $' + str_name + ', %ecx\n\
+    movl $' + str(len(string)) + ', %edx\n\
+    int $0x80')
+
+def print_char(char, newline = False):
+    if not newline:
+        char_name = "chr" + str(len(chars_list))
+        chars_list.append((char_name, char))
+    else:
+        char_name = 'newline'
+    print('movl $4, %eax\n\
+    movl $1, %ebx\n\
+    movl $' + char_name + ', %ecx\n\
     movl $1, %edx\n\
-    int $0x80'
+    int $0x80')
+
 
 def form_blocks(inst_list):
     basic_blocks = []
@@ -63,22 +82,17 @@ def content(block):
     block_var_list_by_line = []  # List of the lists of the variables in each line of the block
     for line in block:
         block_var_list_by_line.append([])
-        if line[1] in non_vars:
-            continue
         for word in line:
-            if word not in lang:
-                try:
-                    int(word)
-                except:
-                    block_var_list_by_line[-1].append(word)
-                    block_var_set.add(word)
+            if word in var_set:
+                block_var_list_by_line[-1].append(word)
+                block_var_set.add(word)
     # print("List:", block_var_list_by_line)       
     return (block_var_set, block_var_list_by_line)
 
 def print_asm(line, symbol_table, line_var_list):
     op = line[1]
     # print ("op: ", op)
-    bad_ops = ['/', '%', 'ret', 'call', 'print', 'exit', 'goto']
+    bad_ops = ['/', '%', 'ret', 'call', 'print', 'exit', 'goto', 'init']
 
     line_reg_list = []
     debug_print(line)
@@ -145,9 +159,16 @@ def print_asm(line, symbol_table, line_var_list):
                 if reg_desc[reg]['state'] == 'loaded':
                     movex86(reg, reg_desc[reg]['content'], 'R2M')
         else:
-            print ('Invaid operator: '+op+'\n')
+            print ('Invalid operator: '+op+'\n')
             raise SyntaxError
         return
+
+    elif op == 'init':
+        var = line_var_list[0]
+        (in_reg, reg) = get_reg(var, symbol_table)
+        if not in_reg:
+            print ("\tmovl "+var+", %"+reg)
+        print ("\tmovl $0, %"+reg)
 
     elif op == 'goto':
         print ("\tjmp "+ line[2])
@@ -167,9 +188,6 @@ def print_asm(line, symbol_table, line_var_list):
         print ("\tret")
 
     elif op == 'print':
-        if line_var_list:
-            var = line_var_list[0] # var stores the var whose value is to be printed
-            var_reg = addr_desc[var]['reg_val'] # var_reg : its corresponding register
         free_reg_list = []
         for reg in reg_list:
             if reg_desc[reg]['state'] == 'loaded':
@@ -177,9 +195,9 @@ def print_asm(line, symbol_table, line_var_list):
                     continue
                 print ('\tpushl %'+reg)
                 free_reg_list.append(reg)
-        if not line_var_list:
-            print(print_newline)
-        else:
+        if line[2] == 'int':
+            var = line_var_list[0] # var stores the var whose value is to be printed
+            var_reg = addr_desc[var]['reg_val'] # var_reg : its corresponding register
             if var_reg:
                 print ('\tpushl %'+var_reg)
                 print ('\tcall __printInt')                    
@@ -188,9 +206,20 @@ def print_asm(line, symbol_table, line_var_list):
                 print ('\tpushl '+var)
                 print ('\tcall __printInt')
                 print ('\tpopl ' +var)
-
+        elif line[2] == 'chr':
+            char = line[-1][1:-1]
+            if char == '\n':
+                print_char(char, True)
+            else:
+                print_char(char)
+        elif line[2] == 'str':
+            string = line[-1][1:-1]
+            print_string(string)
+        else:
+            print('Invalid print type')   
         for elem in reversed(free_reg_list):
-            print ('\tpopl %'+elem)
+            print ('\tpopl %'+elem)   
+
 
     elif op in ['/', '%']:
         dividend = line_var_list[0]
@@ -279,7 +308,7 @@ def process(block):
         i = len(block) - 1
         print_asm(block[i], symbol_table_list[i], block_var_list_by_line[i])
 
-
+    free_all_registers()
     debug_print('\nCURRENT BLOCK', 1)
     debug_print(block, 1)
     debug_print('\nSYMBOL TABLE LIST', 1)
@@ -327,16 +356,16 @@ if __name__ == '__main__':
     lang += list(label_ids)
 
     for line in inst_list:
-        if line[1] in non_vars:
+        if line[1] != 'init':
             continue
-        for word in line:
-            if word not in lang:
-                try:
-                    int(word)
-                except:
-                    var_set.add(word)
-    debug_print("\nALL VARIABLES")
-    debug_print(var_set)
+        var_set.add(line[2])
+    #     # for word in line:
+    #     #     if word not in lang:
+    #     #         try:
+    #     #             int(word)
+    #     #         except:
+    #     #             if word[0] != '"':
+    #     #                 var_set.add(word)
 
     print ('\t.section .text\n')
     print ('\t.global _start\n')
@@ -346,6 +375,9 @@ if __name__ == '__main__':
     for block in basic_blocks:
         process(block)
         inst_no += 1
+
+    debug_print("\nALL VARIABLES")
+    debug_print(var_set)
     
     with open('./src/print_int.s') as fp:
         print_int = fp.read() # Assembly function to print Integer
@@ -356,3 +388,9 @@ if __name__ == '__main__':
         print (word+":\t.long 0")
     print ('newline:')
     print ('\t.ascii "\\n"')
+    for elem in chars_list:
+        print(elem[0] + ':')
+        print('\t.ascii "' + elem[1] + '"')
+    for elem in strings_list:
+        print(elem[0] + ':')
+        print('\t.string "' + elem[1] + '"')
