@@ -24,12 +24,12 @@ def str_to_type(s):
     except:
         return type(s)
 
-def newTemp():
-    global temp_count, temp_base
-    new_place = temp_base+str(temp_count)
-    temp_count += 1
-    ST['addressDescriptor'][new_place] = {'scope': ST['scopes'][len(ST['scopes'])-1], 'variable': ''}   
-    return new_place
+# def newTemp():
+#     global temp_count, temp_base
+#     new_place = temp_base+str(temp_count)
+#     temp_count += 1
+#     ST['addressDescriptor'][new_place] = {'scope': ST['scopes'][len(ST['scopes'])-1], 'variable': ''}   
+#     return new_place
 
 ## note that - string_rs => string*
 ##             string_rp => string+
@@ -238,16 +238,15 @@ def p_singleExpression(p):
                          | arrayLiteral
                          | objectLiteral'''
 
-def p_expression_literal(p):
+def p_expression_Identifier(p):
     ''' singleExpression : Identifier'''
-    # print('\n\n\n\nHaay\n\n\n\n')
-    # p[0] = {}
-    # p[0]['type'] = p[1]['type']
-    # p[0]['place'] = newTemp()
-    # print("**, " + p[0]['place'] + ", " + str(p[1]['val']))
+    p[0] = {}
+    p[0]['type'] = 'id'
+    p[0]['val'] = p[1]
 
 def p_expression_literal(p):
     ''' singleExpression : literal'''
+    # print('LITERAL HOOOOY')
     p[0] = {}
     p[0]['type'] = p[1]['type']
     p[0]['val'] = p[1]['val']
@@ -268,11 +267,9 @@ def p_reassignmentExpression(p):
                            | Identifier XorEq singleExpression
                            | Identifier OrEq singleExpression'''
     
-    # p[0] = dict()
-    print(p[2][:-1] + ", " + p[1] + ", " + str(p[3]['val']))
-
-    # for elem in p:
-    #     print(elem)
+    fpw.write(p[2][:-1] + ", " + p[1] + ", " + str(p[3]['val']) + '\n')
+    # TODO
+    # Restrict arithmetic operator on bool and string
 
 
 def p_literal(p):
@@ -285,12 +282,12 @@ def p_literal(p):
     if typ == int:
         p[0]['type'] = 'int'
         p[0]['val'] = int(p[1])
-    elif typ == str:
-        p[0]['type'] = 'str'
-        p[0]['val'] = p[1]
     elif typ == bool:
         p[0]['type'] = 'bool'
         p[0]['val'] = bool(p[1])
+    else: #if typ == str:
+        p[0]['type'] = 'str'
+        p[0]['val'] = p[1]
                
 def p_objectLiteral(p):
     ''' objectLiteral : LeftBrace propertyAssignment comma_propertyAssignment_rs comma_rq RightBrace
@@ -354,7 +351,7 @@ if __name__ == '__main__':
         sys.exit()
     filename = sys.argv[1]
     data = read_data(filename)
-    # parser = yacc.yacc(debug=True, optimize=False)
-    # result = parser.parse(data, debug=2)
+    fpw = open('tac.ir','w')
     parser = yacc.yacc(debug=True, optimize=False)
+    # result = parser.parse(data, debug=2)
     result = parser.parse(data)
