@@ -97,10 +97,39 @@ def p_variableDeclaration(p):
 
 def p_expressionStatement(p):
     ''' expressionStatement : expressionSequence SemiColon'''
-
+############## IF BLOCK ###################
+## havent implemented createlabels yet##
+## also btw, couldnt do any changes for these semantic actions taken fromm the senior's repo
+## i believe nothing could be done
 def p_ifStatement(p):
-    ''' ifStatement : if LeftParen expressionSequence RightParen statement
-                    | if LeftParen expressionSequence RightParen statement else statement'''
+    ''' ifStatement : if LeftParen expressionSequence RightParen statement'''
+    print("label, "+p[-2][1])
+
+############## IF_ElSE BLOCK ###################
+def p_ifelseStatement(p):
+    ''' ifelseStatement : if LeftParen expressionSequence RightParen ifelseblock_marker statement else elseblock_marker statement elseblockend_maker'''
+
+def p_ifelseblock_marker(p):
+  ''' ifelseblock_marker : '''
+  label1 = createLabel()
+  label2= createLabel()
+  label3 = createLabel()
+  p[0] = [label1,label2,label3]
+  temp = newTemp
+  print("=, "+temp+", 1")
+  print("ifgoto, eq, "+p[-1]['place']+", "+temp+", "+label1)
+  print("goto, "+label2)
+  print("label, "+label3)
+
+def p_elseblock_marker(p):
+  ''' elseblock_marker : '''
+  print("goto, "+p[-3][2])
+  print("label, "+p[-3][1])
+
+def p_elseblockend_marker(p):
+  ''' elseblockend_marker : '''
+  print("label, "+p[-5][2])     
+#####################################################################
 
 def p_iterationStatement(p):
     ''' iterationStatement  : do statement while LeftParen expressionSequence RightParen SemiColon
