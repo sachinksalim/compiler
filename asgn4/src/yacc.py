@@ -69,6 +69,7 @@ def p_statement(p):
                   | variableStatement 
                   | expressionStatement
                   | ifStatement
+                  | ifelseStatement
                   | iterationStatement
                   | continueStatement
                   | breakStatement
