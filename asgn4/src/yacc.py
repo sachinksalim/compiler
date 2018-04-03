@@ -17,12 +17,42 @@ ST['main']['__functions__'] = []
 ST['scopes'] = [ST['main']]
 
 
+# Helping functions
+
 def str_to_type(s):
     try:
         k=literal_eval(s)
         return type(k)
     except:
         return type(s)
+
+def eprint(*args, **kwargs): # Print Errors
+    print(*args, file=sys.stderr, **kwargs)
+
+
+### SYMBOL TABLE FUNCTIONS
+
+def make_table(prevProc):
+  if prevProc in SymT:
+    eprint(prev + ' function already exists!')
+    raise ValueError
+  proc_table = dict()
+  proc_table['__name__'] = prevProc # Needed?
+  proc_table['__level__'] = None #TODO
+  proc_table['__vars'] = [] # List of variables
+  proc_table['__funcs'] = [] # List of functions
+
+  SymT[prevProc] = proc_table
+  return proc_table # Needed?
+
+def add_entry(id_name, id_type, id_offset):
+  var_entry = dict()
+  var_entry['name'] = id_name
+  var_entry['type'] = id_type
+  var_entry['offset'] = id_offset
+
+  SymT['addr_desc'][id_name] = var_entry
+
 
 # def newTemp():
 #     global temp_count, temp_base
@@ -34,6 +64,19 @@ def str_to_type(s):
 ## note that - string_rs => string*
 ##             string_rp => string+
 ##             string_rq => string?
+
+def addScope():
+    #TODO
+    pass
+
+def removeScope():
+    #TODO
+    pass
+
+def in_cur_scope(var):
+    '''checks if var exists in current scope'''
+    #TODO
+    return False
 
 # Precedence and associativity of operators
 precedence = (
@@ -53,20 +96,17 @@ precedence = (
 
 
 def p_program(p):
-    ''' start : statements'''
-
-def p_empty(p):
-    ''' empty :'''
-    pass
+    ''' start : block
+                | statements'''
 
 def p_statements(p):   # it is used as statement*
     ''' statements : statement statements 
                    | empty'''
 
 def p_statement(p):
-    ''' statement : block 
-                  | SemiColon
-                  | variableStatement 
+    ''' statement : SemiColon
+                  | assignmentStatement SemiColon
+                  | declarationStatement SemiColon
                   | expressionStatement
                   | ifStatement
                   | ifelseStatement
@@ -79,25 +119,62 @@ def p_statement(p):
                   | functionDeclaration'''
 
 def p_block(p):
-    ''' block : LeftBrace statements RightBrace'''
+    ''' block : LeftBrace beginBlock statements RightBrace'''
+    removeScope()
 
-def p_variableStatement(p):
-    ''' variableStatement : var variableDeclarationList SemiColon
-                          | variableDeclarationList SemiColon'''
+def p_beginBlock(p):
+    ''' beginBlock : '''
+    addScope()
 
-def p_variableDeclarationList(p):
-    ''' variableDeclarationList : variableDeclaration Comma variableDeclarationList 
-                                | variableDeclaration'''
+def p_declarationStatement(p):
+    ''' declarationStatement : var declarationList 
+                          | declarationList '''
 
-def p_variableDeclaration(p):
-    ''' variableDeclaration : Identifier_tmp 
-                            | Identifier_tmp Assign singleExpression
-        Identifier_tmp : Identifier
+def p_declarationList(p):
+    ''' declarationList : '''
+    # TODO
+
+
+
+
+
+
+
+
+
+
+def p_assignmentStatement(p):
+    ''' assignmentStatement : var assignmentList 
+                          | assignmentList '''
+    var_list = p[2]
+    for var in var_list:
+        if in_cur_scope(var):
+            eprint(var + ' already exists in current scope.')
+            raise SyntaxError
+        add_entry(id_name = var['name'], id_type = var['type'], id_offset = var['offset'])
+
+
+
+def p_assignmentList(p):
+    ''' assignmentList : variableAssignment Comma assignmentList 
+                                | variableAssignment'''
+
+def p_variableAssignment(p):
+    ''' variableAssignment : IdentifierName Assign singleExpression '''
+    Id = {}
+    Id['name'] = p[1]
+    Id['type'] = p[3]['type']
+    # TODO : place
+    p[0] = [Id]
+
+def p_identifierName(p):
+    ''' IdentifierName : Identifier
                        | arrayLiteral
                        | objectLiteral'''
 
 def p_expressionStatement(p):
     ''' expressionStatement : expressionSequence SemiColon'''
+
 ############## IF BLOCK ###################
 ## havent implemented createlabels yet##
 ## also btw, couldnt do any changes for these semantic actions taken fromm the senior's repo
@@ -136,7 +213,7 @@ def p_iterationStatement(p):
     ''' iterationStatement  : do statement while LeftParen expressionSequence RightParen SemiColon
                             | while LeftParen expressionSequence RightParen statement
                             | for LeftParen expressionSequence_rq SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
-                            | for LeftParen var variableDeclarationList SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
+                            | for LeftParen var assignmentList SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
                             | for LeftParen singleExpression in expressionSequence RightParen statement
                             | for LeftParen var variableDeclaration in expressionSequence RightParen statement
                             
@@ -360,6 +437,10 @@ def p_NullLiteral(p):
 def p_DecimalLiteral(p): # Number defined in lex.py
     ''' DecimalLiteral : Number'''
     p[0] = p[1]
+
+def p_empty(p):
+    ''' empty :'''
+    pass
 
 # Error rule for syntax errors
 def p_error(p):
