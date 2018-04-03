@@ -20,14 +20,14 @@ def debug(*args, **kwargs): # Debug
     if DEBUG:
         print(*args, **kwargs)
 
+def eprint(*args, **kwargs): # Print Errors
+    print(*args, file=sys.stderr, **kwargs)
+
 # Auxiliary functions
 
 def add_entry(id_name): #, id_type):
     var_entry = dict()
     var_entry['name'] = id_name
-    # var_entry['type'] = id_type
-    # var_entry['offset'] = id_offset
-
     ST['addr_desc'][id_name] = var_entry
     ST['scopes'][-1]['__variables__'].append(id_name)
 
@@ -50,7 +50,14 @@ def addScope(scope_name = ''):
     ST['scopes'].append(ST[scope_name])
 
 def removeScope():
+    debug(ST['scopes'][-1])
     ST['scopes'].pop()
+
+def inCurScope(_id):
+    scope = ST['scopes'][-1]
+    if _id in scope['__variables__']:
+        return True
+    return False
 
 def gen(code):
     code_list.append(code)
@@ -75,8 +82,7 @@ precedence = (
 # YACC FUNCTIONS
 
 def p_program(p):
-    ''' start : block
-                | statements'''
+    ''' start : statements'''
 
 def p_statements(p):   # it is used as statement*
     ''' statements : statement statements 
@@ -84,11 +90,13 @@ def p_statements(p):   # it is used as statement*
 
 def p_statement(p):
     ''' statement : SemiColon
+                  | block
                   | assignmentStatement SemiColon
                   | reassignmentStatement SemiColon'''
 
 def p_block(p):
     ''' block : LeftBrace beginBlock statements RightBrace'''
+    debug('p_block')
     removeScope()
 
 def p_beginBlock(p):
@@ -118,9 +126,12 @@ def p_factor(p):
 def p_factor_Identifier(p):
     ''' factor : Identifier'''
     debug('p_factor_Identifier')
+    if p[-1] and not inCurScope(p[1]):
+        raise NameError("(In code) name '" + p[1] + "' is not defined")
     p[0] = {}
     p[0]['addr'] = p[1]
     p[0]['code'] = ''
+
 
 def p_factor_literal(p):
     ''' factor : literal'''
@@ -194,9 +205,9 @@ def p_empty(p):
 # Error rule for syntax errors
 def p_error(p):
     if p:
-        print("Syntax error at '%s'" % p.value)
+        raise SyntaxError("(In code) at '%s'" % p.value)
     else:
-        print("Syntax error at EOF")
+        raise SyntaxError("(In code) at EOF")
 
 def read_data(filename):
     fp = open(filename, 'r')
@@ -219,8 +230,7 @@ if __name__ == '__main__':
     # result = parser.parse(data, debug=2)
     result = parser.parse(data)
     debug()
-    for scope in ST['scopes']:
-        debug(scope)
-    debug()
     for code in code_list:
         print(code)
+
+    removeScope()
