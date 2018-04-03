@@ -5,6 +5,8 @@ from ast import literal_eval
 
 temp_count = 0
 temp_base = 'tmp'
+label_count = 0
+label_base = 'label'
 
 ST = {}
 ST['addressDescriptor'] = {}
@@ -18,7 +20,11 @@ ST['scopes'] = [ST['main']]
 
 
 # Helping functions
-
+def createLabel():
+  global label_count, label_base
+  label = label_base + str(label_count)
+  label_count = labels_count + 1
+  return label
 def str_to_type(s):
     try:
         k=literal_eval(s)
@@ -110,6 +116,8 @@ def p_statement(p):
                   | expressionStatement
                   | ifStatement
                   | ifelseStatement
+                  | whileStatement
+                  | forStatement
                   | iterationStatement
                   | continueStatement
                   | breakStatement
@@ -180,15 +188,16 @@ def p_expressionStatement(p):
 ## also btw, couldnt do any changes for these semantic actions taken fromm the senior's repo
 ## i believe nothing could be done
 def p_ifStatement(p):
-    ''' ifStatement : if LeftParen expressionSequence RightParen statement'''
+    ''' ifStatement : if LeftParen expressionSequence RightParen block'''
     print("label, "+p[-2][1])
 
 ############## IF_ElSE BLOCK ###################
 def p_ifelseStatement(p):
-    ''' ifelseStatement : if LeftParen expressionSequence RightParen ifelseblock_marker statement else elseblock_marker statement elseblockend_maker'''
+    ''' ifelseStatement : if LeftParen expressionSequence RightParen ifelseblock_marker statement else elseblock_marker block'''
+    print("label, "+p[-5][2])     
 
 def p_ifelseblock_marker(p):
-  ''' ifelseblock_marker : '''
+  ''' ifelseblock_marker : empty'''
   label1 = createLabel()
   label2= createLabel()
   label3 = createLabel()
@@ -200,25 +209,87 @@ def p_ifelseblock_marker(p):
   print("label, "+label3)
 
 def p_elseblock_marker(p):
-  ''' elseblock_marker : '''
+  ''' elseblock_marker : empty'''
   print("goto, "+p[-3][2])
   print("label, "+p[-3][1])
 
-def p_elseblockend_marker(p):
-  ''' elseblockend_marker : '''
-  print("label, "+p[-5][2])     
 #####################################################################
-
+"""
 def p_iterationStatement(p):
     ''' iterationStatement  : do statement while LeftParen expressionSequence RightParen SemiColon
-                            | while LeftParen expressionSequence RightParen statement
                             | for LeftParen expressionSequence_rq SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
                             | for LeftParen var assignmentList SemiColon expressionSequence_rq SemiColon expressionSequence_rq RightParen statement
-                            | for LeftParen singleExpression in expressionSequence RightParen statement
-                            | for LeftParen var variableDeclaration in expressionSequence RightParen statement
                             
         expressionSequence_rq : expressionSequence
                                | empty'''
+
+
+#     in iterationStatement
+#                            | for LeftParen singleExpression in expressionSequence RightParen statement
+#                            | for LeftParen var variableDeclaration in expressionSequence RightParen statement
+"""
+####################################################################
+######## ForStatement#####################################
+#########################################
+def p_forStatement(p):
+  ''' forStatement  : for LeftParen expressionSequence_rq SemiColon forexp_marker expressionSequence_rq forcheck_marker SemiColon expressionSequence_rq increment_marker RightParen block 
+                    | for LeftParen var assignmentList SemiColon forexp_marker expressionSequence_rq forcheck_marker SemiColon expressionSequence_rq increment_marker RightParen block 
+                            
+      expressionSequence_rq : expressionSequence
+                            | empty '''
+  print("goto, "+p[-8][3])
+  print("label, "+p[-8][2])
+
+def p_forexp_marker(p):
+  '''forexp_marker : empty '''
+  label1 = createLabel()
+  label2 = createLabel()
+  label3 = createLabel()
+  label4 = createLabel()
+  p[0] = [label1, label2, label3, label4]
+  print("label, "+label1)
+
+def p_forcheck_marker(p):
+  ''' forcheck_marker : empty '''
+  tempvar = newTemp()
+  print("=, "+tempvar+", 1")
+  print("ifgoto, eq, "+p[-1]['place']+", "+tempvar+", "+p[-2][1])
+  print("goto, "+p[-2][2])
+  print("goto, "+p[-2][2])
+
+def p_increment_marker(p):
+  '''increment_marker : empty '''
+  print("goto, "+p[-5][0])
+  print("label, "+p[-5][1])
+
+####################################
+
+
+####################################################################
+######## WhileStatement#####################################
+#########################################
+
+def p_whileStatement(p):
+  '''whileStatement : while whileblockbegin_marker LeftParen expressionSequence RightParen exprcheck_marker block '''
+  print("goto, "+p[-6][0])
+  print("label, "+p[-6][1])
+
+def p_expcheck_marker(p):
+  ''' expcheck_marker : empty'''
+  tempvar = newTemp()
+  print("=, "+tempvar+", 1")
+  print("ifgoto, neq, "+p[-2]['place']+", "+tempvar+", "+p[-4][1])
+
+def p_whileblockbegin_marker(p):
+  ''' startblock_marker : empty'''
+  begin = createLabel()
+  end = createLabel()
+  p[0] = [begin, end]
+  print("label, "+begin)
+
+#############################################
+#############################################
+
 
 def p_continueStatement(p):
     ''' continueStatement : continue Identifier SemiColon
