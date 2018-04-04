@@ -7,14 +7,14 @@ import sys
 DEBUG = True
 
 tmp_count = 0
-tmp_base = 'tmp'
+tmp_base = '__tmp'
 scope_count = 0
-scope_base = 'scope'
+scope_base = '__scope'
 code_list = []
 
-ST = {}
-ST['scopes'] = []
-ST['addr_desc'] = {}
+SymTab = {}
+SymTab['scopes'] = []
+SymTab['addr_desc'] = {}
 
 def debug(*args, **kwargs): # Debug
     if DEBUG:
@@ -28,8 +28,8 @@ def eprint(*args, **kwargs): # Print Errors
 def add_entry(id_name): #, id_type):
     var_entry = dict()
     var_entry['name'] = id_name
-    ST['addr_desc'][id_name] = var_entry
-    ST['scopes'][-1]['__variables__'].append(id_name)
+    SymTab['addr_desc'][id_name] = var_entry
+    SymTab['scopes'][-1]['__variables__'].add(id_name)
 
 def newTemp():
     global tmp_count
@@ -42,26 +42,31 @@ def addScope(scope_name = ''):
     if not scope_name:
         scope_name = scope_base + str(scope_count)
     scope_count += 1
-    ST[scope_name] = {}
-    ST[scope_name]['__name__'] = scope_name
-    ST[scope_name]['__level__'] = len(ST['scopes'])
-    ST[scope_name]['__variables__'] = []
-    ST[scope_name]['__functions__'] = []
-    ST['scopes'].append(ST[scope_name])
+    SymTab[scope_name] = {}
+    SymTab[scope_name]['__name__'] = scope_name
+    SymTab[scope_name]['__level__'] = len(SymTab['scopes'])
+    SymTab[scope_name]['__variables__'] = set()
+    SymTab[scope_name]['__functions__'] = set()
+    SymTab['scopes'].append(SymTab[scope_name])
 
 def removeScope():
-    debug(ST['scopes'][-1])
-    ST['scopes'].pop()
+    debug(SymTab['scopes'][-1])
+    SymTab['scopes'].pop()
+
+def inAllScope(_id):
+    for scope in reversed(SymTab['scopes']):
+        if _id in scope['__variables__']:
+            return scope['__level__']
+    return -1
 
 def inCurScope(_id):
-    scope = ST['scopes'][-1]
+    scope = SymTab['scopes'][-1]
     if _id in scope['__variables__']:
         return True
     return False
 
 def gen(code):
     code_list.append(code)
-    return code
 
 # Precedence and associativity of operators
 precedence = (
@@ -83,16 +88,28 @@ precedence = (
 
 def p_program(p):
     ''' start : statements'''
+    gen("exit")
 
 def p_statements(p):   # it is used as statement*
     ''' statements : statement statements 
-                   | empty'''
+                  | empty'''
 
 def p_statement(p):
-    ''' statement : SemiColon
-                  | block
-                  | assignmentStatement SemiColon
-                  | reassignmentStatement SemiColon'''
+    ''' statement : singleStatement SemiColon                  
+                  | blockStatement'''
+
+def p_singleStatement(p):
+    ''' singleStatement : assignmentStatement
+                  | reassignmentStatement
+                  | functionCall
+                  | returnStatement
+                  | empty'''
+
+def p_blockStatement(p):
+    ''' blockStatement : functionDefinition'''
+    pass
+    # if else, while, etc. comes here
+
 
 def p_block(p):
     ''' block : LeftBrace beginBlock statements RightBrace'''
@@ -106,17 +123,30 @@ def p_beginBlock(p):
 def p_assignmentStatement(p):
     ''' assignmentStatement : var assignmentList 
                           | assignmentList '''
+    if len(p) == 3:
+        p[0] = p[2]
+        for var in p[0]:
+            if inCurScope(var):
+                raise RuntimeError("(In code) name '" + var + "' is defined previously")
+            add_entry(var)
+    else:
+        p[0] = p[1]
+        for var in p[0]:
+            add_entry(var)
 
 def p_assignmentList(p):
     ''' assignmentList : variableAssignment Comma assignmentList 
                                 | variableAssignment'''
+    if len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = [p[1]] + p[3]
 
 def p_variableAssignment(p):
     ''' variableAssignment : Identifier Assign singleExpression'''
     debug('p_variableAssignment')
-    add_entry(p[1])
-    p[0] = {}
-    p[0]['code'] = p[3]['code'] + gen("=, " + p[1] + ", " + p[3]['addr'])
+    p[0] = p[1]
+    gen("=, " + p[1] + ", " + p[3]['addr'])
 
 def p_factor(p):
     ''' singleExpression : factor'''
@@ -126,11 +156,10 @@ def p_factor(p):
 def p_factor_Identifier(p):
     ''' factor : Identifier'''
     debug('p_factor_Identifier')
-    if p[-1] and not inCurScope(p[1]):
+    if p[-1] and inAllScope(p[1]) == -1:
         raise NameError("(In code) name '" + p[1] + "' is not defined")
     p[0] = {}
     p[0]['addr'] = p[1]
-    p[0]['code'] = ''
 
 
 def p_factor_literal(p):
@@ -138,14 +167,12 @@ def p_factor_literal(p):
     debug('p_factor_literal')
     p[0] = {}
     p[0]['addr'] = str(p[1])
-    p[0]['code'] = ''
 
 def p_factor_paranthesis(p):
     ''' factor : LeftParen singleExpression RightParen'''
     debug('p_factor_paranthesis')
     p[0] = {}
     p[0]['addr'] = p[2]['addr']
-    p[0]['code'] = p[2]['code']
 
 def p_expression_binary_arith(p):
     ''' singleExpression : singleExpression Plus singleExpression
@@ -156,9 +183,8 @@ def p_expression_binary_arith(p):
     debug('p_expression_binary_arith')
     p[0] = {}
     p[0]['addr'] = newTemp()
-    p[0]['code'] = p[1]['code'] + p[3]['code']
-    p[0]['code'] += gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
-    p[0]['code'] += gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
+    gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
+    gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
 
 def p_expression_unary_arith(p):
     ''' singleExpression : Incr singleExpression
@@ -168,18 +194,17 @@ def p_expression_unary_arith(p):
     debug('p_expression_unary_arith')
     p[0] = {}
     p[0]['addr'] = newTemp()
-    p[0]['code'] = p[2]['code']
     if p[1] == '+':
-        p[0]['code'] += gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
     elif p[1] == '-':
-        p[0]['code'] += gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
-        p[0]['code'] += gen("*, " + p[0]['addr'] + ", " + "-1")
+        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("*, " + p[0]['addr'] + ", " + "-1")
     elif p[1] == '++':
-        p[0]['code'] += gen("+, " + p[2]['addr'] + ", " + "1")
-        p[0]['code'] += gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("+, " + p[2]['addr'] + ", " + "1")
+        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
     elif p[1] == '--':
-        p[0]['code'] += gen("-, " + p[2]['addr'] + ", " + "1")
-        p[0]['code'] += gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("-, " + p[2]['addr'] + ", " + "1")
+        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
 
 def p_reassignmentStatement(p):
     ''' reassignmentStatement : Identifier PlusEq singleExpression
@@ -191,7 +216,64 @@ def p_reassignmentStatement(p):
     debug('p_reassignmentStatement')
     add_entry(p[1])
     p[0] = {}
-    p[0]['code'] = p[3]['code'] + gen("+, " + p[1] + ", " + p[3]['addr'])
+    gen("+, " + p[1] + ", " + p[3]['addr'])
+
+
+###FUNCTION BLOCK
+
+def p_functionDefinition(p):
+    ''' functionDefinition : function Identifier funcDecMarker LeftParen functionParameterList RightParen block'''
+
+def p_funcDecMarker(p):
+    '''funcDecMarker : empty'''
+    gen('function, '+ p[-1])
+
+def p_functionParameterList(p):
+    ''' functionParameterList : Identifier Comma functionParameterList
+                            | Identifier
+                            | empty'''
+    debug('p_functionParameterList')
+    if p[1]:
+        p[0] = [p[1]]
+    else:
+        p[0] = []
+    try:
+        p[0] += p[3]
+    except:
+        pass
+    debug(p[0])
+
+def p_functionCall(p):
+    ''' functionCall : Identifier LeftParen functionParameterList RightParen '''
+    gen('call, '+ p[1])
+
+def p_returnStatement(p):
+    ''' returnStatement : return
+                        | return IdentifierName'''
+    if len(p) == 2:
+        gen("ret")
+    else:
+        gen("ret, " + p[2])
+
+
+
+def p_identifierName(p):
+    ''' IdentifierName : Identifier
+                       | arrayLiteral
+                       | objectLiteral'''
+    p[0] = p[1]
+
+def p_arrayLiteral(p):
+    '''arrayLiteral : '''
+    #TODO
+    pass
+
+def p_objectLiteral(p):
+    '''objectLiteral : '''
+    #TODO
+    pass
+
+
 
 def p_DecimalLiteral(p):
     ''' literal : Number'''
@@ -225,10 +307,15 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
     data = read_data(filename)
-    fpw = open('tac.ir','w')
     parser = yacc.yacc(debug=True, optimize=False)
     # result = parser.parse(data, debug=2)
     result = parser.parse(data)
+
+    with open('tac.ir','w') as fin:
+        for code in code_list:
+            fin.write(code)
+            fin.write('\n')
+
     debug()
     for code in code_list:
         print(code)
