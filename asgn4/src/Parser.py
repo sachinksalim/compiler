@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from __future__ import print_function
 import ply.yacc as yacc
 from lex import tokens
 import sys
@@ -7,10 +7,13 @@ import sys
 DEBUG = True
 
 tmp_count = 0
-tmp_base = '__tmp'
+tmp_base = '_tmp_'
 scope_count = 0
-scope_base = '__scope'
+scope_base = '_scope_'
 code_list = []
+label_count = 0
+label_base = '_label_'
+
 
 SymTab = {}
 SymTab['scopes'] = []
@@ -25,16 +28,28 @@ def eprint(*args, **kwargs): # Print Errors
 
 # Auxiliary functions
 
-def add_entry(id_name): #, id_type):
+def createLabel():
+  global label_count, label_base
+  label = label_base + str(label_count)
+  label_count = label_count + 1
+  return label
+
+def add_entry(id_name, id_scope, id_type):
+    if id_name in SymTab['scopes'][id_scope]['__variables__']:
+        raise RuntimeError("(In code) name '" + id_name + "' is defined previously")
     var_entry = dict()
-    var_entry['name'] = id_name
+    var_entry['addr'] = id_name
+    var_entry['type'] = id_type
+    var_entry['scope'] = id_scope
     SymTab['addr_desc'][id_name] = var_entry
-    SymTab['scopes'][-1]['__variables__'].add(id_name)
+    SymTab['scopes'][id_scope]['__variables__'].add(id_name)
+    gen('init, ' + id_name)
 
 def newTemp():
     global tmp_count
     tmp_name = tmp_base + str(tmp_count)
     tmp_count += 1
+    gen('init, '+tmp_name)
     return tmp_name
 
 def addScope(scope_name = ''):
@@ -97,16 +112,21 @@ def p_statements(p):   # it is used as statement*
 def p_statement(p):
     ''' statement : singleStatement SemiColon                  
                   | blockStatement'''
+    global tmp_count
+    tmp_count = 0
 
 def p_singleStatement(p):
     ''' singleStatement : assignmentStatement
+                    | declarationStatement
                   | reassignmentStatement
                   | functionCall
                   | returnStatement
+                  | printStatement
                   | empty'''
 
 def p_blockStatement(p):
-    ''' blockStatement : functionDefinition'''
+    ''' blockStatement : functionDefinition
+                       | ifStatement'''
     pass
     # if else, while, etc. comes here
 
@@ -120,33 +140,48 @@ def p_beginBlock(p):
     ''' beginBlock : empty'''
     addScope()
 
-def p_assignmentStatement(p):
-    ''' assignmentStatement : var assignmentList 
-                          | assignmentList '''
-    if len(p) == 3:
-        p[0] = p[2]
-        for var in p[0]:
-            if inCurScope(var):
-                raise RuntimeError("(In code) name '" + var + "' is defined previously")
-            add_entry(var)
-    else:
-        p[0] = p[1]
-        for var in p[0]:
-            add_entry(var)
+# DECLARATION FUNCTIONS
 
-def p_assignmentList(p):
-    ''' assignmentList : variableAssignment Comma assignmentList 
-                                | variableAssignment'''
+def p_declarationStatement(p):
+    ''' declarationStatement : var declarationList'''
+    p[0] = p[2]
+    for var in p[0]:
+        if inCurScope(var['addr']):
+            raise RuntimeError("(In code) name '" + var + "' is defined previously")
+        add_entry(var['addr'], len(SymTab['scopes'])-1, var['type'])
+
+def p_declarationList(p):
+    ''' declarationList : Identifier Comma declarationList 
+                                | Identifier'''
+    tmp = {}
+    tmp['addr'] = p[1]
+    tmp['type'] = 'int'
+    p[1] = tmp
     if len(p) == 2:
         p[0] = [p[1]]
     else:
         p[0] = [p[1]] + p[3]
 
-def p_variableAssignment(p):
-    ''' variableAssignment : Identifier Assign singleExpression'''
-    debug('p_variableAssignment')
-    p[0] = p[1]
+# ASSIGNMENT FUNCTIONS
+
+def p_assignmentStatement(p):
+    ''' assignmentStatement : var assignmentList 
+                          | assignmentList '''
+    if len(p) == 3:
+        p[0] = p[2]            
+    else:
+        p[0] = p[1]
+
+def p_assignmentList(p):
+    ''' assignmentList : Identifier Assign singleExpression Comma assignmentList 
+                                | Identifier Assign singleExpression'''
+    p[0] = {}   
+    p[0]['addr'] = p[1]
+    p[0]['type'] = p[3]['type']
+    if p[-1] == 'var':
+        add_entry(p[0]['addr'], len(SymTab['scopes'])-1, p[0]['type'])
     gen("=, " + p[1] + ", " + p[3]['addr'])
+    
 
 def p_factor(p):
     ''' singleExpression : factor'''
@@ -156,10 +191,12 @@ def p_factor(p):
 def p_factor_Identifier(p):
     ''' factor : Identifier'''
     debug('p_factor_Identifier')
-    if p[-1] and inAllScope(p[1]) == -1:
+    scope_level = inAllScope(p[1])
+    if p[-1] and scope_level == -1:
         raise NameError("(In code) name '" + p[1] + "' is not defined")
     p[0] = {}
     p[0]['addr'] = p[1]
+    p[0]['type'] = SymTab['addr_desc'][p[1]]['type']
 
 
 def p_factor_literal(p):
@@ -167,12 +204,14 @@ def p_factor_literal(p):
     debug('p_factor_literal')
     p[0] = {}
     p[0]['addr'] = str(p[1])
+    p[0]['type'] = 'int'
 
 def p_factor_paranthesis(p):
     ''' factor : LeftParen singleExpression RightParen'''
     debug('p_factor_paranthesis')
     p[0] = {}
     p[0]['addr'] = p[2]['addr']
+    p[0]['type'] = p[2]['type']
 
 def p_expression_binary_arith(p):
     ''' singleExpression : singleExpression Plus singleExpression
@@ -182,6 +221,14 @@ def p_expression_binary_arith(p):
                          | singleExpression Mod singleExpression '''
     debug('p_expression_binary_arith')
     p[0] = {}
+    if p[1]['type']=='int' and p[3]['type']=='int':
+        p[0]['type'] = 'int'
+    else:
+        if p[1]['type'] != 'int':
+            raise TypeError("(In code) %s has a type %s, Expects int" % (p[1]['addr'],p[1]['type']))
+        else:
+            raise TypeError("(In code) %s has a type %s, Expects int" % (p[3]['addr'],p[3]['type']))
+
     p[0]['addr'] = newTemp()
     gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
     gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
@@ -194,6 +241,7 @@ def p_expression_unary_arith(p):
     debug('p_expression_unary_arith')
     p[0] = {}
     p[0]['addr'] = newTemp()
+    # if p[2]['type'] == 'bool':
     if p[1] == '+':
         gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
     elif p[1] == '-':
@@ -214,10 +262,70 @@ def p_reassignmentStatement(p):
                            | Identifier ModEq singleExpression
                            '''
     debug('p_reassignmentStatement')
-    add_entry(p[1])
+    # add_entry(p[1]['addr'], p[3]['type'])
     p[0] = {}
     gen("+, " + p[1] + ", " + p[3]['addr'])
 
+# BOOLEAN FUNCTIONS
+
+def p_expression_rel_op(p):
+    ''' singleExpression : singleExpression LT singleExpression
+                         | singleExpression GT singleExpression
+                         | singleExpression LTE singleExpression
+                         | singleExpression GTE singleExpression
+                         | singleExpression Equal singleExpression
+                         | singleExpression NotEqual singleExpression '''
+    debug('p_expression_rel_op')
+    p[0] = {}
+    p[0]['addr'] = newTemp()
+    p[0]['type'] = 'bool'
+    # symb_dict = {
+    # '<': 'lt',
+    # '>': 'gt',
+    # '<=':'leq',
+    # '>=':'geq',
+    # '==':'eq',
+    # '!=':'neq'
+    # }
+    gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
+    gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
+
+def p_expression_logical_op(p):
+    ''' singleExpression : singleExpression Or singleExpression
+                         | singleExpression And singleExpression '''
+    p[0] = {}
+    if p[1]['type']=='bool' and p[3]['type']=='bool':
+        p[0]['type'] = 'bool'
+    else:
+        if p[1]['type'] != 'bool':
+            raise TypeError("(In code) %s has a type %s, Expects bool" % (p[1]['addr'],p[1]['type']))
+        else:
+            raise TypeError("(In code) %s has a type %s, Expects bool" % (p[3]['addr'],p[3]['type']))
+    p[0]['addr'] = newTemp()
+    gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
+    gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
+
+def p_expression_shift(p):
+    '''singleExpression : singleExpression Lshift singleExpression
+                  | singleExpression Rshift singleExpression
+                  | singleExpression Urshift singleExpression'''
+
+### IFStatment
+def p_ifStatement(p):
+    '''ifStatement : if LeftParen singleExpression RightParen ifblock_marker block'''
+    gen("label, "+p[5][1])
+    
+def p_ifblock_marker(p):
+    '''ifblock_marker : empty'''
+    label1 = createLabel()
+    label2 = createLabel()
+    label3 = createLabel()
+    p[0] = [label1, label2, label3]
+    temp = newTemp()
+    gen("=, "+temp+", 0")
+    gen("ifgoto, neq, "+temp+", "+p[-2]['addr']+", "+label1)
+    gen("goto, "+label2)
+    gen("label, "+label1)
 
 ###FUNCTION BLOCK
 
@@ -273,6 +381,12 @@ def p_objectLiteral(p):
     #TODO
     pass
 
+# PRINT FUNCTION
+
+def p_printStatement(p):
+    '''printStatement : print LeftParen singleExpression RightParen'''
+    if p[3]['type'] == 'int':
+        gen('print, int, ' + p[3]['addr'])
 
 
 def p_DecimalLiteral(p):
