@@ -43,13 +43,13 @@ def add_entry(id_name, id_scope, id_type):
     var_entry['scope'] = id_scope
     SymTab['addr_desc'][id_name] = var_entry
     SymTab['scopes'][id_scope]['__variables__'].add(id_name)
-    gen('init, ' + id_name)
+    gen('init', id_name)
 
 def newTemp():
     global tmp_count
     tmp_name = tmp_base + str(tmp_count)
     tmp_count += 1
-    gen('init, '+tmp_name)
+    gen('init', tmp_name)
     return tmp_name
 
 def addScope(scope_name = ''):
@@ -80,8 +80,25 @@ def inCurScope(_id):
         return True
     return False
 
-def gen(code):
+def gen(*code):
+    code = [str(x) for x in code]
+    # code = ", ".join(code)
     code_list.append(code)
+
+def process_code():
+    ''' Our Codegen script requires all function definitions to occur after all other statements '''
+    tmp1 = []
+    tmp2 = []
+    idx = 0
+    print(len(code_list))
+    while idx < len(code_list):
+        if code_list[idx][0] == 'function':
+            while code_list[idx-1][0] != 'ret':
+                tmp2.append(code_list[idx])
+                idx += 1                
+        tmp1.append(code_list[idx])
+        idx += 1
+    return tmp1 + tmp2
 
 # Precedence and associativity of operators
 precedence = (
@@ -180,7 +197,7 @@ def p_assignmentList(p):
     p[0]['type'] = p[3]['type']
     if p[-1] == 'var':
         add_entry(p[0]['addr'], len(SymTab['scopes'])-1, p[0]['type'])
-    gen("=, " + p[1] + ", " + p[3]['addr'])
+    gen("=", p[1], p[3]['addr'])
     
 
 def p_factor(p):
@@ -230,8 +247,8 @@ def p_expression_binary_arith(p):
             raise TypeError("(In code) %s has a type %s, Expects int" % (p[3]['addr'],p[3]['type']))
 
     p[0]['addr'] = newTemp()
-    gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
-    gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
+    gen("=", p[0]['addr'], p[1]['addr'])
+    gen(p[2], p[0]['addr'], p[3]['addr'])
 
 def p_expression_unary_arith(p):
     ''' singleExpression : Incr singleExpression
@@ -243,16 +260,16 @@ def p_expression_unary_arith(p):
     p[0]['addr'] = newTemp()
     # if p[2]['type'] == 'bool':
     if p[1] == '+':
-        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("=", p[0]['addr'], p[2]['addr'])
     elif p[1] == '-':
-        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
-        gen("*, " + p[0]['addr'] + ", " + "-1")
+        gen("=", p[0]['addr'], p[2]['addr'])
+        gen("*", p[0]['addr'], "-1")
     elif p[1] == '++':
-        gen("+, " + p[2]['addr'] + ", " + "1")
-        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("+", p[2]['addr'], "1")
+        gen("=", p[0]['addr'], p[2]['addr'])
     elif p[1] == '--':
-        gen("-, " + p[2]['addr'] + ", " + "1")
-        gen("=, " + p[0]['addr'] + ", " + p[2]['addr'])
+        gen("-", p[2]['addr'], "1")
+        gen("=", p[0]['addr'], p[2]['addr'])
 
 def p_reassignmentStatement(p):
     ''' reassignmentStatement : Identifier PlusEq singleExpression
@@ -264,7 +281,7 @@ def p_reassignmentStatement(p):
     debug('p_reassignmentStatement')
     # add_entry(p[1]['addr'], p[3]['type'])
     p[0] = {}
-    gen("+, " + p[1] + ", " + p[3]['addr'])
+    gen("+", p[1], p[3]['addr'])
 
 # BOOLEAN FUNCTIONS
 
@@ -287,8 +304,8 @@ def p_expression_rel_op(p):
     # '==':'eq',
     # '!=':'neq'
     # }
-    gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
-    gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
+    gen("=", p[0]['addr'], p[1]['addr'])
+    gen(p[2], p[0]['addr'], p[3]['addr'])
 
 def p_expression_logical_op(p):
     ''' singleExpression : singleExpression Or singleExpression
@@ -302,8 +319,8 @@ def p_expression_logical_op(p):
         else:
             raise TypeError("(In code) %s has a type %s, Expects bool" % (p[3]['addr'],p[3]['type']))
     p[0]['addr'] = newTemp()
-    gen("=, " + p[0]['addr'] + ", " + p[1]['addr'])
-    gen(p[2] + ", " + p[0]['addr'] + ", " + p[3]['addr'])
+    gen("=", p[0]['addr'], p[1]['addr'])
+    gen(p[2], p[0]['addr'], p[3]['addr'])
 
 def p_expression_shift(p):
     '''singleExpression : singleExpression Lshift singleExpression
@@ -334,7 +351,7 @@ def p_functionDefinition(p):
 
 def p_funcDecMarker(p):
     '''funcDecMarker : empty'''
-    gen('function, '+ p[-1])
+    gen('function', p[-1])
 
 def p_functionParameterList(p):
     ''' functionParameterList : Identifier Comma functionParameterList
@@ -353,15 +370,15 @@ def p_functionParameterList(p):
 
 def p_functionCall(p):
     ''' functionCall : Identifier LeftParen functionParameterList RightParen '''
-    gen('call, '+ p[1])
+    gen('call', p[1])
 
 def p_returnStatement(p):
     ''' returnStatement : return
-                        | return IdentifierName'''
+                        | return singleExpression'''
     if len(p) == 2:
         gen("ret")
     else:
-        gen("ret, " + p[2])
+        gen("ret", p[2]['addr'])
 
 
 
@@ -386,7 +403,7 @@ def p_objectLiteral(p):
 def p_printStatement(p):
     '''printStatement : print LeftParen singleExpression RightParen'''
     if p[3]['type'] == 'int':
-        gen('print, int, ' + p[3]['addr'])
+        gen('print', 'int', p[3]['addr'])
 
 
 def p_DecimalLiteral(p):
@@ -425,12 +442,15 @@ if __name__ == '__main__':
     # result = parser.parse(data, debug=2)
     result = parser.parse(data)
 
+    code_list = process_code()
+
     with open('tac.ir','w') as fin:
         for code in code_list:
-            fin.write(code)
+            fin.write(", ".join(code))
             fin.write('\n')
-
-    debug()
+  
+    
+    debug('\n\nCODE')
     for code in code_list:
         print(code)
 
