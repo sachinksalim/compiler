@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 import ply.lex as lex
 
-keywords = ('break','case','console','continue','delete', 'default', 'do', 'else','eval', 'false', 'for','function','if','in','log','new', 'null', 'return','switch', 'this', 'true', 'typeof','undefined','var','void','while','with')
+keywords = ('break','case','continue','delete', 'default', 'do', 'else','eval', 'false', 'for','function','if','in','new', 'null', 'print','return','switch', 'this', 'true', 'typeof','undefined','var','void','while','with')
 
 tokens = ('Dot', 'Comma', 'SemiColon', 'Colon', 'Plus', 'Minus', 'Times', 'Expo', 'Divide', 'Mod', 'BinAnd', 'BinOr', 'BinXor', 'BinNot', 'CondOp', 'Not', 'LeftParen', 'RightParen', 'LeftBrace', 'RightBrace', 'LeftBracket', 'RightBracket', 'Assign', 'Equal', 'NotEqual', 'StrEqual', 'StrNotEqual', 'LT', 'GT', 'LTE', 'GTE', 'Or', 'And', 'Incr', 'Decr', 'Lshift', 'Rshift', 'Urshift', 'PlusEq', 'MinusEq', 'MulEq', 'DivEq', 'LshiftEq', 'RshiftEq', 'UrshiftEq', 'AndEq', 'ModEq', 'XorEq', 'OrEq','Identifier', 'Number', 'String') + keywords
 
