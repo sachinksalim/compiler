@@ -465,7 +465,7 @@ def p_switch_marker(p):
     global switch_var
     #print( "welcome")
     switch_var = p[-1]['addr']
-    print(switch_var)
+    #print(switch_var)
 
 def p_caseBlockend_marker(p):
     '''caseBlockend_marker : empty '''
