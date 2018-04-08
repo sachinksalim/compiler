@@ -163,7 +163,8 @@ def p_blockStatement(p):
                        | ifStatement
                        | ifelseStatement
                        | whileLoop
-                       | forLoop'''
+                       | forLoop
+                       | switchStatement'''
     pass
     # if else, while, etc. comes here
 
@@ -448,6 +449,60 @@ def p_increment_marker(p):
     '''increment_marker : empty'''
     gen("goto", p[-5][0])
     gen("label", p[-5][1])
+
+##################################################################################################
+
+
+### SwitchStatement
+switch_var = None
+switch_label = None # at the end of the entire switch case
+
+def p_switchStatement(p):
+    '''switchStatement : switch LeftParen singleExpression switch_marker RightParen caseBlock_marker caseBlock caseBlockend_marker'''
+
+def p_switch_marker(p):
+    '''switch_marker : empty'''
+    global switch_var
+    print( "welcome")
+    switch_var = p[-1]['addr']
+    print(switch_var)
+
+def p_caseBlockend_marker(p):
+    '''caseBlockend_marker : empty '''
+    gen("label", p[-2][0])
+
+def p_caseBlock_marker(p):
+    '''caseBlock_marker : empty'''
+    global switch_label
+    label0 = createLabel()
+    switch_label = label0
+    p[0] = [label0]
+
+def p_caseBlock(p):
+    '''caseBlock : LeftBrace caseClause_rs defaultClause RightBrace
+
+        caseClause_rs : caseClause caseClause_rs
+                      | empty '''
+
+def p_caseClause(p):
+    '''caseClause : case singleExpression casechk_marker Colon statements caseClauseend_marker'''
+
+def p_casechk_marker(p):
+    '''casechk_marker : empty'''
+    label1 = createLabel()
+    p[0] = [label1]
+    print( switch_var )
+    gen("ifgoto", "neq" , switch_var , p[-1]['addr'] , label1 )
+
+def p_caseClauseend_marker(p):
+    '''caseClauseend_marker : empty'''
+    print("yooooo")
+    print(p[-7])
+    gen( "goto", switch_label )  # this gives the label created in caseBlock_marker, the label at the end of the entire switch block
+    gen( "label" , p[-3][0] )
+
+def p_defaultClause(p):
+    '''defaultClause : default Colon statements'''
 
 ##################################################################################################
 
