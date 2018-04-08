@@ -151,12 +151,11 @@ def p_statement(p):
 def p_singleStatement(p):
     ''' singleStatement : assignmentStatement
                     | declarationStatement
-                  | reassignmentStatement
                   | functionCall
                   | returnStatement
                   | printStatement
                   | breakStatement
-                  | IncrDecrStatement
+                  | singleExpression
                   | empty'''
 
 def p_blockStatement(p):
@@ -285,13 +284,7 @@ def p_expression_unary_arith(p):
     
 
 def p_expression_IncrDecr(p):
-    ''' singleExpression : IncrDecrStatement'''
-    debug('p_expression_IncrDecr')
-    p[0] = p[1]
-
-
-def p_IncrDecrStatement(p):
-    ''' IncrDecrStatement : singleExpression Incr
+    ''' singleExpression : singleExpression Incr
                     | singleExpression Decr
                     | Incr singleExpression
                     | Decr singleExpression'''
@@ -312,7 +305,7 @@ def p_IncrDecrStatement(p):
         gen(p[2][0], p[1]['addr'], "1")
 
 def p_reassignmentStatement(p):
-    ''' reassignmentStatement : Identifier PlusEq singleExpression
+    ''' singleExpression : Identifier PlusEq singleExpression
                            | Identifier MinusEq singleExpression
                            | Identifier MulEq singleExpression
                            | Identifier DivEq singleExpression
@@ -502,7 +495,7 @@ def p_identifierName(p):
     p[0] = p[1]
 
 def p_arrayLiteral(p):
-    '''arrayLiteral : Identifier LeftBracket singleExpression RightBracket
+    ''' arrayLiteral : Identifier LeftBracket singleExpression RightBracket
     | arrayLiteral LeftBracket singleExpression RightBracket'''
     # Second derivation not implemented (2-D matrices)
     p[0] = {}
