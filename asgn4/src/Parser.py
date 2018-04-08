@@ -463,7 +463,7 @@ def p_switchStatement(p):
 def p_switch_marker(p):
     '''switch_marker : empty'''
     global switch_var
-    print( "welcome")
+    #print( "welcome")
     switch_var = p[-1]['addr']
     print(switch_var)
 
@@ -491,13 +491,13 @@ def p_casechk_marker(p):
     '''casechk_marker : empty'''
     label1 = createLabel()
     p[0] = [label1]
-    print( switch_var )
+    #print( switch_var )
     gen("ifgoto", "neq" , switch_var , p[-1]['addr'] , label1 )
 
 def p_caseClauseend_marker(p):
     '''caseClauseend_marker : empty'''
-    print("yooooo")
-    print(p[-7])
+    #print("yooooo")
+    #print(p[-7])
     gen( "goto", switch_label )  # this gives the label created in caseBlock_marker, the label at the end of the entire switch block
     gen( "label" , p[-3][0] )
 
