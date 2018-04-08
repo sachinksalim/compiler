@@ -28,6 +28,18 @@ def eprint(*args, **kwargs): # Print Errors
 
 # Auxiliary functions
 
+def first_lexeme(p):
+    first = 0
+    while True:
+        try:
+            x = p[first]
+            if(not x):
+                break
+            first -= 1
+        except:
+            break
+    return p[first + 1]
+
 def createLabel():
   global label_count, label_base
   label = label_base + str(label_count)
@@ -65,7 +77,7 @@ def addScope(scope_name = ''):
     SymTab['scopes'].append(SymTab[scope_name])
 
 def removeScope():
-    debug(SymTab['scopes'][-1])
+    # debug(SymTab['scopes'][-1])
     SymTab['scopes'].pop()
 
 def inAllScope(_id):
@@ -82,7 +94,6 @@ def inCurScope(_id):
 
 def gen(*code):
     code = [str(x) for x in code]
-    # code = ", ".join(code)
     code_list.append(code)
 
 def process_code():
@@ -119,8 +130,13 @@ precedence = (
 # YACC FUNCTIONS
 
 def p_program(p):
-    ''' start : statements'''
+    ''' start : prog_startmarker statements'''
     gen("exit")
+
+def p_prog_startmarker(p):
+    ''' prog_startmarker : empty '''
+    gen("init", "_zero_")
+    gen("=", "_zero_", "0")
 
 def p_statements(p):   # it is used as statement*
     ''' statements : statement statements 
@@ -139,11 +155,16 @@ def p_singleStatement(p):
                   | functionCall
                   | returnStatement
                   | printStatement
+                  | breakStatement
+                  | IncrDecrStatement
                   | empty'''
 
 def p_blockStatement(p):
     ''' blockStatement : functionDefinition
-                       | ifStatement'''
+                       | ifStatement
+                       | ifelseStatement
+                       | whileLoop
+                       | forLoop'''
     pass
     # if else, while, etc. comes here
 
@@ -190,12 +211,12 @@ def p_assignmentStatement(p):
         p[0] = p[1]
 
 def p_assignmentList(p):
-    ''' assignmentList : Identifier Assign singleExpression Comma assignmentList 
-                                | Identifier Assign singleExpression'''
+    ''' assignmentList : IdentifierName Assign singleExpression Comma assignmentList 
+                                | IdentifierName Assign singleExpression'''
     p[0] = {}   
     p[0]['addr'] = p[1]
     p[0]['type'] = p[3]['type']
-    if p[-1] == 'var':
+    if first_lexeme(p) == 'var':
         add_entry(p[0]['addr'], len(SymTab['scopes'])-1, p[0]['type'])
     gen("=", p[1], p[3]['addr'])
     
@@ -220,8 +241,7 @@ def p_factor_literal(p):
     ''' factor : literal'''
     debug('p_factor_literal')
     p[0] = {}
-    p[0]['addr'] = str(p[1])
-    p[0]['type'] = 'int'
+    p[0] = p[1]
 
 def p_factor_paranthesis(p):
     ''' factor : LeftParen singleExpression RightParen'''
@@ -251,25 +271,45 @@ def p_expression_binary_arith(p):
     gen(p[2], p[0]['addr'], p[3]['addr'])
 
 def p_expression_unary_arith(p):
-    ''' singleExpression : Incr singleExpression
-                    | Decr singleExpression
-                    | Plus singleExpression
+    ''' singleExpression : Plus singleExpression
                     | Minus singleExpression'''
     debug('p_expression_unary_arith')
     p[0] = {}
     p[0]['addr'] = newTemp()
-    # if p[2]['type'] == 'bool':
+    p[0]['type'] = p[2]['type']
     if p[1] == '+':
         gen("=", p[0]['addr'], p[2]['addr'])
-    elif p[1] == '-':
+    elif p[1] == '-':        
         gen("=", p[0]['addr'], p[2]['addr'])
         gen("*", p[0]['addr'], "-1")
-    elif p[1] == '++':
-        gen("+", p[2]['addr'], "1")
-        gen("=", p[0]['addr'], p[2]['addr'])
-    elif p[1] == '--':
-        gen("-", p[2]['addr'], "1")
-        gen("=", p[0]['addr'], p[2]['addr'])
+    
+
+def p_expression_IncrDecr(p):
+    ''' singleExpression : IncrDecrStatement'''
+    debug('p_expression_IncrDecr')
+    p[0] = p[1]
+
+
+def p_IncrDecrStatement(p):
+    ''' IncrDecrStatement : singleExpression Incr
+                    | singleExpression Decr
+                    | Incr singleExpression
+                    | Decr singleExpression'''
+    debug('p_IncrDecrStatement')
+    p[0] = {}
+    if p[-1]:
+        p[0]['addr'] = newTemp()
+    debug('p[-1]: ', p[-1])
+    if p[1] in ['++','--']:    
+        gen(p[1][0], p[2]['addr'], "1")
+        if p[-1]: 
+            p[0]['type'] = p[2]['type']
+            gen("=", p[0]['addr'], p[2]['addr'])
+    elif p[2] in ['++','--']:
+        if p[-1]:
+            p[0]['type'] = p[1]['type']
+            gen("=", p[0]['addr'], p[1]['addr'])
+        gen(p[2][0], p[1]['addr'], "1")
 
 def p_reassignmentStatement(p):
     ''' reassignmentStatement : Identifier PlusEq singleExpression
@@ -281,7 +321,7 @@ def p_reassignmentStatement(p):
     debug('p_reassignmentStatement')
     # add_entry(p[1]['addr'], p[3]['type'])
     p[0] = {}
-    gen("+", p[1], p[3]['addr'])
+    gen(p[2][0], p[1], p[3]['addr'])
 
 # BOOLEAN FUNCTIONS
 
@@ -327,10 +367,13 @@ def p_expression_shift(p):
                   | singleExpression Rshift singleExpression
                   | singleExpression Urshift singleExpression'''
 
+def p_breakStatement(p):
+    ''' breakStatement : break'''
+
 ### IFStatment
 def p_ifStatement(p):
     '''ifStatement : if LeftParen singleExpression RightParen ifblock_marker block'''
-    gen("label, "+p[5][1])
+    gen("label", p[5][1])
     
 def p_ifblock_marker(p):
     '''ifblock_marker : empty'''
@@ -338,11 +381,82 @@ def p_ifblock_marker(p):
     label2 = createLabel()
     label3 = createLabel()
     p[0] = [label1, label2, label3]
-    temp = newTemp()
-    gen("=, "+temp+", 0")
-    gen("ifgoto, neq, "+temp+", "+p[-2]['addr']+", "+label1)
-    gen("goto, "+label2)
-    gen("label, "+label1)
+    gen("ifgoto", "neq", "_zero_", p[-2]['addr'], label1)
+    gen("goto", label2)
+    gen("label", label1)
+
+###########################################################################
+
+### IFELSEStatement
+
+def p_ifelseStatement(p):
+    '''ifelseStatement : if LeftParen singleExpression RightParen ifblock_marker block else elseblock_marker block '''
+    gen("label", p[5][2])
+
+def p_elseblock_marker(p):
+    '''elseblock_marker : empty'''
+    gen("goto", p[-3][2])
+    gen("label", p[-3][1])
+
+###########################################################################
+
+
+## WHILELoop
+
+def p_whileLoop(p):
+    ''' whileLoop : while start_marker LeftParen singleExpression RightParen condnchk_marker block blockend_marker'''
+
+def p_blockend_marker(p):
+    '''blockend_marker : empty'''
+    #gen("reached end of while")
+    gen("goto", p[-6][0])
+    gen("label", p[-6][1])
+    
+def p_start_marker(p):
+    '''start_marker : empty'''
+    start = createLabel()
+    end = createLabel()
+    p[0] = [start, end]
+    gen("label", start)
+
+def p_condnchk_marker(p):
+    '''condnchk_marker : empty'''
+    gen("ifgoto", "eq", "_zero_", p[-2]['addr'], p[-4][1])
+
+################################################################################################
+
+###FORLoop
+def p_forLoop(p):
+    '''forLoop : for LeftParen assignmentStatement SemiColon forstart_marker singleExpression forcondnchk_marker SemiColon singleExpression increment_marker RightParen block'''
+    gen("goto", p[5][3])
+    gen("label", p[5][2])
+#    removeScope()
+
+def p_forscope_marker(p):
+    '''forscope_marker : empty '''
+    addScope()
+
+def p_forstart_marker(p):
+    '''forstart_marker : empty'''
+    label1 = createLabel()
+    label2 = createLabel()
+    label3 = createLabel()
+    label4 = createLabel()
+    p[0] = [label1, label2, label3, label4]
+    gen("label", label1)
+
+def p_forcondnchk_marker(p):
+    '''forcondnchk_marker : empty'''
+    gen("ifgoto", "neq", "_zero_", p[-1]['addr'], p[-2][1])
+    gen("goto", p[-2][2])
+    gen("label", p[-2][3])
+
+def p_increment_marker(p):
+    '''increment_marker : empty'''
+    gen("goto", p[-5][0])
+    gen("label", p[-5][1])
+
+##################################################################################################
 
 ###FUNCTION BLOCK
 
@@ -366,7 +480,6 @@ def p_functionParameterList(p):
         p[0] += p[3]
     except:
         pass
-    debug(p[0])
 
 def p_functionCall(p):
     ''' functionCall : Identifier LeftParen functionParameterList RightParen '''
@@ -389,9 +502,15 @@ def p_identifierName(p):
     p[0] = p[1]
 
 def p_arrayLiteral(p):
-    '''arrayLiteral : '''
-    #TODO
-    pass
+    '''arrayLiteral : Identifier LeftBracket singleExpression RightBracket
+    | arrayLiteral LeftBracket singleExpression RightBracket'''
+    # Second derivation not implemented (2-D matrices)
+    p[0] = {}
+    p[0]['array'] = p[1]
+    p[0]['addr'] = newTemp()
+    p[0]['type'] = 'int' # TODO
+    gen('A=', p[0]['addr'], p[0]['array'], p[3]['addr'])
+    
 
 def p_objectLiteral(p):
     '''objectLiteral : '''
@@ -402,14 +521,33 @@ def p_objectLiteral(p):
 
 def p_printStatement(p):
     '''printStatement : print LeftParen singleExpression RightParen'''
-    if p[3]['type'] == 'int':
-        gen('print', 'int', p[3]['addr'])
+    gen('print', p[3]['type'], p[3]['addr'])
 
 
 def p_DecimalLiteral(p):
     ''' literal : Number'''
     debug('p_DecimalLiteral')
-    p[0] = p[1]
+    p[0] = {}
+    p[0]['addr'] = str(p[1])
+    p[0]['type'] = 'int'
+
+def p_StringLiteral(p):
+    ''' literal : String'''
+    debug('p_StringLiteral')
+    p[0] = {}
+    p[0]['addr'] = p[1]
+    if len(p[1]) == 1:
+        p[0]['type'] = 'chr'
+    else:
+        p[0]['type'] = 'str'
+
+def p_BooleanLiteral(p):
+    ''' literal : true
+                | false'''
+    debug('p_BooleanLiteral')
+    p[0] = {}
+    p[0]['addr'] = p[1]
+    p[0]['type'] = 'bool'
 
 def p_empty(p):
     ''' empty :'''
